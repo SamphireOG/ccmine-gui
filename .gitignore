@@ -1,0 +1,33 @@
+# ComputerCraft/Lua
+*.bak
+*.tmp
+*~
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Test files
+test_*.lua
+debug_*.lua
+
+# Local config
+config.local.lua
+credentials.lua
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+build/
+dist/
+
