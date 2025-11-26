@@ -2,7 +2,7 @@
 -- Quick installer: pastebin run <code>
 -- Downloads the full installer from GitHub
 
-local GITHUB_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/ccmine-gui/main/installer.lua"
+local GITHUB_URL = "https://raw.githubusercontent.com/SamphireOG/ccmine-gui/main/installer.lua"
 
 print("============================")
 print("   CCMine GUI Framework")
