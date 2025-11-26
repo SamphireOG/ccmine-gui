@@ -1,7 +1,7 @@
 -- CCMine GUI Framework Installer
 -- Easy installation for ComputerCraft computers and turtles
 
-local GITHUB_BASE = "https://raw.githubusercontent.com/YOUR_USERNAME/ccmine-gui/main/"
+local GITHUB_BASE = "https://raw.githubusercontent.com/SamphireOG/ccmine-gui/main/"
 local VERSION = "2.0.0"
 
 -- Files to download
