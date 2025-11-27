@@ -157,18 +157,19 @@ function dashboard.createProjectScreen()
     local nameLbl = components.createLabel("namelbl", 5, 5, "Project Name:")
     local nameInput = components.createTextInput("name", 5, 6, screenW - 11, "Enter project name...")
     
-    -- Tunnel Length and Spacing on same line (compact layout)
-    local lengthLbl = components.createLabel("lengthlbl", 5, 8, "Length:")
-    local lengthInput = components.createTextInput("length", 13, 8, 6, "32")
+    -- Tunnel Length
+    local lengthLbl = components.createLabel("lengthlbl", 5, 8, "Tunnel Length:")
+    local lengthInput = components.createTextInput("length", 5, 9, 12, "32")
     lengthInput.value = "32"
     
-    local spacingLbl = components.createLabel("spacinglbl", 21, 8, "Gap:")
-    local spacingInput = components.createTextInput("spacing", 26, 8, 5, "4")
+    -- Tunnel Spacing (on separate line)
+    local spacingLbl = components.createLabel("spacinglbl", 5, 11, "Tunnel Spacing:")
+    local spacingInput = components.createTextInput("spacing", 5, 12, 12, "4")
     spacingInput.value = "4"
     
     -- Options
-    local torchCheck = components.createCheckbox("torches", 5, 11, "Place torches", true)
-    local wallCheck = components.createCheckbox("walls", 5, 12, "Wall protection", true)
+    local torchCheck = components.createCheckbox("torches", 5, 14, "Place torches", true)
+    local wallCheck = components.createCheckbox("walls", 5, 15, "Wall protection", true)
     
     -- Buttons
     local btnW = math.floor((screenW - 10) / 2)
