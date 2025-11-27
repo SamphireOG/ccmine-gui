@@ -127,6 +127,9 @@ function dashboard.createProjectScreen()
     local lengthInput = form:addField("Tunnel Length:", "32", 12, "32")
     local spacingInput = form:addField("Tunnel Spacing:", "4", 12, "4")
     
+    -- Debug: Show that form was created
+    gui.notify("Form created with " .. #form.children .. " children", colors.white, colors.green, 3)
+    
     -- Options (positioned after form)
     local optionsY = 5 + form.height + 2
     local torchCheck = components.createCheckbox("torches", 5, optionsY, "Place torches", true)
