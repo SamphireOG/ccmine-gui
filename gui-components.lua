@@ -77,8 +77,12 @@ function Panel:draw()
             child.y = originalY - self.scrollOffset
         end
         
+        -- Calculate viewport boundaries (accounting for border and title)
+        local viewportTop = contentStartY + (self.borderColor and 1 or 0)
+        local viewportBottom = self.height - (self.borderColor and 1 or 0)
+        
         -- Only draw if visible in panel viewport
-        if child.y + child.height > contentStartY and child.y < self.height then
+        if child.y + child.height > viewportTop and child.y < viewportBottom then
             child:draw()
         end
         
@@ -114,8 +118,8 @@ function components.createPanel(id, x, y, width, height, title)
             -- Calculate max scroll offset
             local maxScroll = math.max(0, contentHeight - visibleHeight)
             
-            -- Update scroll offset
-            self.scrollOffset = self.scrollOffset - direction
+            -- Update scroll offset (+ direction for natural scrolling)
+            self.scrollOffset = self.scrollOffset + direction
             self.scrollOffset = math.max(0, math.min(self.scrollOffset, maxScroll))
             
             gui.requestRedraw()
