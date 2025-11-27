@@ -348,7 +348,19 @@ end
 function gui.handleScroll(x, y, direction)
     local component = gui.findComponentAt(x, y)
     if component then
+        -- Emit scroll to the component
         component:emit("scroll", x, y, direction)
+        
+        -- Propagate scroll up to parent panels
+        local current = component
+        while current.parent do
+            current = current.parent
+            if current.type == "panel" and current.scrollable then
+                current:emit("scroll", x, y, direction)
+                break  -- Stop at first scrollable panel
+            end
+        end
+        
         return component
     end
     return nil
