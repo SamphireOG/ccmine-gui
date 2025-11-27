@@ -70,12 +70,20 @@ function Panel:draw()
     
     -- Draw children with scroll offset
     for _, child in ipairs(self.children) do
+        local originalY = child.y
+        
+        -- Apply scroll offset temporarily
         if self.scrollable then
-            child.y = child.y - self.scrollOffset
+            child.y = originalY - self.scrollOffset
         end
-        if child.y + child.height > contentStartY then
+        
+        -- Only draw if visible in panel viewport
+        if child.y + child.height > contentStartY and child.y < self.height then
             child:draw()
         end
+        
+        -- Restore original position
+        child.y = originalY
     end
 end
 
@@ -85,6 +93,35 @@ function components.createPanel(id, x, y, width, height, title)
     local panel = Panel:new(id, x, y, width, height)
     panel.title = title
     panel.borderColor = gui.getColor("border")
+    
+    -- Add scroll handling
+    panel:on("scroll", function(self, x, y, direction)
+        if self.scrollable then
+            -- Calculate content height based on children
+            local maxY = 0
+            for _, child in ipairs(self.children) do
+                local childBottom = child.y + child.height
+                if childBottom > maxY then
+                    maxY = childBottom
+                end
+            end
+            
+            -- Account for panel title (content starts at y=1)
+            local contentStartY = self.title and 1 or 0
+            local visibleHeight = self.height - contentStartY - (self.borderColor and 2 or 0)
+            local contentHeight = maxY
+            
+            -- Calculate max scroll offset
+            local maxScroll = math.max(0, contentHeight - visibleHeight)
+            
+            -- Update scroll offset
+            self.scrollOffset = self.scrollOffset - direction
+            self.scrollOffset = math.max(0, math.min(self.scrollOffset, maxScroll))
+            
+            gui.requestRedraw()
+        end
+    end)
+    
     return gui.registerComponent(panel)
 end
 
