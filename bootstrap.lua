@@ -17,7 +17,6 @@ local oldFiles = {
     "gui-components.lua", 
     "gui-layouts.lua",
     "gui-demo.lua",
-    "gui-demo-responsive.lua",
     "main.lua",
     "installer.lua"
 }
