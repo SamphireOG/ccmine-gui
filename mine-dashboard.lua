@@ -4,64 +4,30 @@
 local gui = require("gui-core")
 local components = require("gui-components")
 local layouts = require("gui-layouts")
+local dialogs = require("gui-dialogs")
+local data = require("gui-data")
 
 local dashboard = {}
 
 -- Get screen dimensions
 local screenW, screenH = gui.init()
 
--- ========== PROJECT STORAGE ==========
-
-local function getProjectFilename(projectName)
-    return "project_" .. projectName .. ".cfg"
-end
+-- ========== PROJECT STORAGE (using framework helpers) ==========
 
 local function listProjects()
-    local projects = {}
-    for _, file in ipairs(fs.list("/")) do
-        if file:match("^project_(.+)%.cfg$") then
-            local name = file:match("^project_(.+)%.cfg$")
-            table.insert(projects, name)
-        end
-    end
-    return projects
+    return data.listConfigs("project_", ".cfg")
 end
 
 local function loadProject(projectName)
-    local filename = getProjectFilename(projectName)
-    if not fs.exists(filename) then
-        return nil
-    end
-    
-    local file = fs.open(filename, "r")
-    if not file then
-        return nil
-    end
-    
-    local content = file.readAll()
-    file.close()
-    
-    return textutils.unserialize(content)
+    return data.loadConfig(projectName, "project_", ".cfg")
 end
 
-local function saveProject(projectName, data)
-    local filename = getProjectFilename(projectName)
-    local file = fs.open(filename, "w")
-    if file then
-        file.write(textutils.serialize(data))
-        file.close()
-        return true
-    end
-    return false
+local function saveProject(projectName, projectData)
+    return data.saveConfig(projectName, projectData, "project_", ".cfg")
 end
 
 local function deleteProject(projectName)
-    local filename = getProjectFilename(projectName)
-    if fs.exists(filename) then
-        fs.delete(filename)
-        return true
-    end
-    return false
+    return data.deleteConfig(projectName, "project_", ".cfg")
 end
 
 -- ========== MAIN DASHBOARD SCREEN ==========
@@ -249,65 +215,26 @@ function dashboard.openProject(projectName)
     end)
 end
 
--- ========== DELETE CONFIRMATION ==========
+-- ========== DELETE CONFIRMATION (using framework dialog) ==========
 
 function dashboard.confirmDelete(projectName)
-    -- Create a modal-style delete confirmation
-    gui.clearComponents()
-    
-    -- Dim background effect (draw a panel)
-    local confirmPanel = components.createPanel("confirm", 
-        math.floor(screenW / 4), 
-        math.floor(screenH / 3), 
-        math.floor(screenW / 2), 
-        8, 
-        "Confirm Delete")
-    confirmPanel.borderColor = gui.getColor("error")
-    
-    local msgLbl = components.createLabel("msg", 
-        math.floor(screenW / 4) + 2, 
-        math.floor(screenH / 3) + 2, 
-        "Delete project:")
-    
-    local nameLbl = components.createLabel("projname", 
-        math.floor(screenW / 4) + 2, 
-        math.floor(screenH / 3) + 3, 
-        projectName)
-    nameLbl.fgColor = gui.getColor("error")
-    
-    local warnLbl = components.createLabel("warn",
-        math.floor(screenW / 4) + 2,
-        math.floor(screenH / 3) + 5,
-        "This cannot be undone!")
-    warnLbl.fgColor = gui.getColor("warning")
-    
-    -- Buttons
-    local btnW = math.floor(screenW / 2 / 2) - 2
-    local yesBtn = components.createButton("yes", 
-        math.floor(screenW / 4) + 1, 
-        math.floor(screenH / 3) + 6, 
-        btnW, 
-        2, 
-        "Delete", 
+    dialogs.confirm(
+        "Confirm Delete",
+        "Delete project '" .. projectName .. "'? This cannot be undone!",
         function()
+            -- Yes callback
             if deleteProject(projectName) then
                 gui.notify("Project deleted: " .. projectName, colors.white, colors.orange, 2)
                 gui.setScreen(dashboard.mainScreen)
             else
                 gui.notify("Failed to delete project!", colors.white, colors.red, 3)
             end
-        end)
-    yesBtn.bgColor = gui.getColor("error")
-    
-    local noBtn = components.createButton("no", 
-        math.floor(screenW / 4) + btnW + 2, 
-        math.floor(screenH / 3) + 6, 
-        btnW, 
-        2, 
-        "Cancel", 
+        end,
         function()
+            -- No callback
             gui.setScreen(dashboard.mainScreen)
-        end)
+        end
+    )
 end
 
 -- ========== RUN DASHBOARD ==========

@@ -8,7 +8,9 @@ local VERSION = "2.0.0"
 local CORE_FILES = {
     "gui-core.lua",
     "gui-components.lua",
-    "gui-layouts.lua"
+    "gui-layouts.lua",
+    "gui-dialogs.lua",
+    "gui-data.lua"
 }
 
 local EXAMPLE_FILES = {
