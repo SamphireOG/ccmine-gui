@@ -118,9 +118,8 @@ function components.createPanel(id, x, y, width, height, title)
             -- Calculate max scroll offset
             local maxScroll = math.max(0, contentHeight - visibleHeight)
             
-            -- Update scroll offset by 1 row (normalize direction to 1 or -1)
-            local scrollAmount = direction > 0 and 1 or -1
-            self.scrollOffset = self.scrollOffset + scrollAmount
+            -- Update scroll offset (+ direction for natural scrolling)
+            self.scrollOffset = self.scrollOffset + direction
             self.scrollOffset = math.max(0, math.min(self.scrollOffset, maxScroll))
             
             gui.requestRedraw()
