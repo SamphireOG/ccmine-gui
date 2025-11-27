@@ -116,22 +116,22 @@ function dashboard.createProjectScreen()
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
     
-    -- Form Panel
+    -- Scrollable Form Panel
     local panel = components.createPanel("form", 3, 3, screenW - 5, screenH - 6, "Project Details")
     panel.borderColor = gui.getColor("border")
+    panel.scrollable = true
     
-    -- Auto-layout form (no manual positioning needed!)
+    -- Auto-layout form
     local form = layouts.createFormLayout("projectForm", 5, 5, screenW - 11)
     
-    local nameInput = form:addField("Project Name:", "Enter project name...", screenW - 11, "")
-    local lengthInput = form:addField("Tunnel Length:", "32", 12, "32")
-    local spacingInput = form:addField("Tunnel Spacing:", "4", 12, "4")
+    local nameInput = form:addField("Project Name:", "Enter name...", screenW - 11, "")
+    local mainTunnelInput = form:addField("Main Tunnel L:", "64", 12, "64")
+    local sideTunnelInput = form:addField("Side Tunnel L:", "32", 12, "32")
+    local startYInput = form:addField("Starting Y:", "11", 12, "11")
+    local endYInput = form:addField("Ending Y:", "64", 12, "64")
     
-    -- Debug: Show that form was created
-    gui.notify("Form created with " .. #form.children .. " children", colors.white, colors.green, 3)
-    
-    -- Options (positioned after form)
-    local optionsY = 5 + form.height + 2
+    -- Options (positioned right after form fields)
+    local optionsY = 5 + form.height
     local torchCheck = components.createCheckbox("torches", 5, optionsY, "Place torches", true)
     local wallCheck = components.createCheckbox("walls", 5, optionsY + 1, "Wall protection", true)
     
@@ -146,7 +146,7 @@ function dashboard.createProjectScreen()
         end
         
         -- Check if project already exists
-        if fs.exists(getProjectFilename(name)) then
+        if data.exists("project_" .. name .. ".cfg") then
             gui.notify("Project already exists!", colors.white, colors.red, 3)
             return
         end
@@ -154,8 +154,10 @@ function dashboard.createProjectScreen()
         -- Create project
         local projectData = {
             name = name,
-            tunnelLength = tonumber(lengthInput.value) or 32,
-            spacing = tonumber(spacingInput.value) or 4,
+            mainTunnelLength = tonumber(mainTunnelInput.value) or 64,
+            sideTunnelLength = tonumber(sideTunnelInput.value) or 32,
+            startY = tonumber(startYInput.value) or 11,
+            endY = tonumber(endYInput.value) or 64,
             placeTorches = torchCheck.checked,
             wallProtection = wallCheck.checked,
             created = os.epoch("utc"),
@@ -190,19 +192,21 @@ function dashboard.openProject(projectName)
     -- Title
     gui.centerText(projectName, 1, gui.getColor("primary"), colors.white)
     
-    -- Project Info Panel
-    local panel = components.createPanel("info", 3, 3, screenW - 5, 10, "Project Info")
+    -- Project Info Panel (taller to fit all fields)
+    local panel = components.createPanel("info", 3, 3, screenW - 5, 12, "Project Info")
     panel.borderColor = gui.getColor("border")
     
     -- Display project details
-    local tunnelLbl = components.createLabel("tunnel", 5, 5, "Tunnel Length: " .. (project.tunnelLength or 32))
-    local spacingLbl = components.createLabel("spacing", 5, 6, "Spacing: " .. (project.spacing or 4))
-    local channelLbl = components.createLabel("channel", 5, 7, "Channel: " .. (project.channel or 101))
-    local torchLbl = components.createLabel("torch", 5, 8, "Torches: " .. (project.placeTorches and "Yes" or "No"))
-    local wallLbl = components.createLabel("wall", 5, 9, "Wall Protection: " .. (project.wallProtection and "Yes" or "No"))
+    local mainLbl = components.createLabel("main", 5, 5, "Main Tunnel: " .. (project.mainTunnelLength or 64))
+    local sideLbl = components.createLabel("side", 5, 6, "Side Tunnel: " .. (project.sideTunnelLength or 32))
+    local startLbl = components.createLabel("start", 5, 7, "Start Y: " .. (project.startY or 11))
+    local endLbl = components.createLabel("end", 5, 8, "End Y: " .. (project.endY or 64))
+    local channelLbl = components.createLabel("channel", 5, 9, "Channel: " .. (project.channel or 101))
+    local torchLbl = components.createLabel("torch", 5, 10, "Torches: " .. (project.placeTorches and "Yes" or "No"))
+    local wallLbl = components.createLabel("wall", 5, 11, "Wall Protect: " .. (project.wallProtection and "Yes" or "No"))
     
     -- Action Buttons
-    local startBtn = components.createButton("start", 3, 14, screenW - 5, 3, "Start Mining", function()
+    local startBtn = components.createButton("start", 3, 16, screenW - 5, 3, "Start Mining", function()
         gui.notify("Mining system not yet implemented", colors.black, colors.yellow, 3)
         -- TODO: Launch mining coordinator
     end)
