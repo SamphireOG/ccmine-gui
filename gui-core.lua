@@ -489,11 +489,6 @@ function gui.runApp(initialScreen)
     while not gui.state.shouldExit do
         local event, param1, param2, param3 = os.pullEvent()
         
-        -- Debug: show all events
-        if event == "char" or event == "key" then
-            gui.notify("Event: " .. event .. " (" .. tostring(param1) .. ")", colors.white, colors.purple, 1)
-        end
-        
         if event == "mouse_click" then
             gui.handleClick(param2, param3, param1)
             gui.draw()
@@ -521,22 +516,9 @@ function gui.runApp(initialScreen)
             if gui.state.notificationTimer == param1 then
                 gui.clearNotification()
             end
-        elseif event == "char" then
-            -- Dispatch to focused component
-            if gui.state.focusedComponent and gui.state.focusedComponent.handleChar then
-                gui.state.focusedComponent:handleChar(param1)
-                gui.draw()
-            end
         elseif event == "key" then
-            -- Dispatch to focused component first
-            local handled = false
-            if gui.state.focusedComponent and gui.state.focusedComponent.handleKey then
-                handled = gui.state.focusedComponent:handleKey(param1)
-                gui.draw()
-            end
-            
-            -- Allow Q key to exit by default (if not handled)
-            if not handled and param1 == keys.q then
+            -- Allow Q key to exit
+            if param1 == keys.q then
                 gui.state.shouldExit = true
             end
         elseif event == "term_resize" then

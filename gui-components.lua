@@ -262,56 +262,27 @@ function TextInput:new(id, x, y, width)
     obj.focusBorderColor = gui.getColor("primary")
     
     obj:on("click", function(self)
-        self.isFocused = true
-        gui.state.focusedComponent = self
-        -- Debug notification
-        gui.notify("Input focused - type now", colors.white, colors.blue, 2)
+        -- Use ComputerCraft's native read() function
+        local absX, absY = self:getAbsolutePosition()
+        gui.screen.term.setCursorPos(absX + 1, absY)
+        gui.screen.term.setBackgroundColor(self.bgColor)
+        gui.screen.term.setTextColor(self.fgColor)
+        gui.screen.term.setCursorBlink(true)
+        
+        -- Read input using native ComputerCraft function
+        local input = read(nil, nil, nil, self.value)
+        
+        if input then
+            self.value = input
+            self.cursorPos = #input
+        end
+        
+        gui.screen.term.setCursorBlink(false)
         gui.requestRedraw()
+        gui.draw()
     end)
     
     return obj
-end
-
-function TextInput:handleChar(char)
-    if self.isFocused then
-        if not self.maxLength or #self.value < self.maxLength then
-            self.value = self.value .. char
-            self.cursorPos = #self.value
-            -- Debug: show that char was received
-            gui.notify("Typed: " .. char, colors.white, colors.green, 1)
-            gui.requestRedraw()
-            return true
-        end
-    else
-        -- Debug: not focused
-        gui.notify("Not focused!", colors.white, colors.red, 1)
-    end
-    return false
-end
-
-function TextInput:handleKey(key)
-    if self.isFocused then
-        if key == keys.backspace then
-            if #self.value > 0 then
-                self.value = self.value:sub(1, -2)
-                self.cursorPos = #self.value
-                gui.requestRedraw()
-            end
-            return true
-        elseif key == keys.delete then
-            self.value = ""
-            self.cursorPos = 0
-            gui.requestRedraw()
-            return true
-        elseif key == keys.enter then
-            self.isFocused = false
-            gui.state.focusedComponent = nil
-            gui.screen.term.setCursorBlink(false)
-            gui.requestRedraw()
-            return true
-        end
-    end
-    return false
 end
 
 function TextInput:draw()
