@@ -88,9 +88,12 @@ function dashboard.mainScreen()
     local projects = listProjects()
     
     if #projects == 0 then
-        -- No projects message
-        local noProjectsLbl = components.createLabel("noprojects", 4, 9, "No projects yet. Create one to get started!")
+        -- No projects message (keep it short to fit in panel)
+        local noProjectsLbl = components.createLabel("noprojects", 4, 9, "No projects yet.")
         noProjectsLbl.fgColor = gui.getColor("disabled")
+        
+        local hintLbl = components.createLabel("hint", 4, 10, "Click 'Create +' to start!")
+        hintLbl.fgColor = gui.getColor("disabled")
     else
         -- Display projects as list items with delete buttons
         local startY = 9

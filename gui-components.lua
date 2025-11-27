@@ -217,6 +217,12 @@ function Label:draw()
     gui.screen.term.setTextColor(self.fgColor)
     
     local displayText = self.text
+    
+    -- Truncate text if it exceeds width
+    if #displayText > self.width then
+        displayText = displayText:sub(1, self.width - 3) .. "..."
+    end
+    
     if self.align == "center" then
         local padding = math.floor((self.width - #displayText) / 2)
         displayText = string.rep(" ", padding) .. displayText
