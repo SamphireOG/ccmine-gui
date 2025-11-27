@@ -327,8 +327,20 @@ end
 -- ========== EVENT HANDLING ==========
 
 function gui.handleClick(x, y, button)
+    gui.notify("Click at " .. x .. "," .. y, colors.white, colors.purple, 1)
+    
     -- Find topmost component at position
     local clicked = gui.findComponentAt(x, y)
+    
+    if clicked then
+        local absX, absY = clicked:getAbsolutePosition()
+        gui.notify("Found: " .. clicked.type .. " at " .. absX .. "," .. absY, colors.white, colors.green, 1)
+        if clicked.parent and clicked.parent.scrollOffset then
+            gui.notify("Parent scroll: " .. clicked.parent.scrollOffset, colors.white, colors.blue, 1)
+        end
+    else
+        gui.notify("No component found!", colors.white, colors.red, 1)
+    end
     
     -- Unfocus old component if clicking elsewhere
     if gui.state.focusedComponent and gui.state.focusedComponent ~= clicked then
