@@ -88,11 +88,15 @@ function dashboard.mainScreen()
     local projects = listProjects()
     
     if #projects == 0 then
-        -- No projects message (keep it short to fit in panel)
+        -- No projects message (constrain to panel width)
+        local maxLabelWidth = screenW - 10  -- Account for margins and border
+        
         local noProjectsLbl = components.createLabel("noprojects", 4, 9, "No projects yet.")
+        noProjectsLbl.width = maxLabelWidth
         noProjectsLbl.fgColor = gui.getColor("disabled")
         
-        local hintLbl = components.createLabel("hint", 4, 10, "Click 'Create +' to start!")
+        local hintLbl = components.createLabel("hint", 4, 10, "Press 'Create +' above")
+        hintLbl.width = maxLabelWidth
         hintLbl.fgColor = gui.getColor("disabled")
     else
         -- Display projects as list items with delete buttons
