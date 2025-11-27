@@ -483,6 +483,19 @@ function gui.runApp(initialScreen)
         elseif event == "mouse_scroll" then
             gui.handleScroll(param2, param3, param1)
             gui.draw()
+        elseif event == "timer" then
+            -- Restore button colors after click flash
+            for _, component in pairs(gui.state.components) do
+                if component.type == "button" and component.flashTimer == param1 then
+                    if component.originalBgColor then
+                        component.bgColor = component.originalBgColor
+                        component.originalBgColor = nil
+                        component.flashTimer = nil
+                        gui.requestRedraw()
+                        gui.draw()
+                    end
+                end
+            end
         elseif event == "key" then
             -- Allow Q key to exit by default
             if param1 == keys.q then

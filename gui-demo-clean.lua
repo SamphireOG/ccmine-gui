@@ -21,23 +21,23 @@ function demo.basicButtons()
     local col2X = math.floor(screenW / 2) + 2
     local btnW = math.floor((screenW - 8) / 2)
     
-    -- Create buttons (visual feedback is now built into framework!)
-    local btn1 = components.createButton("btn1", col1X, 4, btnW, 2, "Click Me", function(self)
-        -- Button automatically flashes white on click
+    -- Create buttons
+    local btn1 = components.createButton("btn1", col1X, 4, btnW, 2, "Click Me", function()
+        print("Button 1!")
     end)
     
-    local btn2 = components.createButton("btn2", col2X, 4, btnW, 2, "Success", function(self)
-        -- Button automatically flashes white on click
+    local btn2 = components.createButton("btn2", col2X, 4, btnW, 2, "Success", function()
+        print("Success!")
     end)
     btn2.bgColor = gui.getColor("success")
     
-    local btn3 = components.createButton("btn3", col1X, 7, btnW, 2, "Warning", function(self)
-        -- Button automatically flashes white on click
+    local btn3 = components.createButton("btn3", col1X, 7, btnW, 2, "Warning", function()
+        print("Warning!")
     end)
     btn3.bgColor = gui.getColor("warning")
     
-    local btn4 = components.createButton("btn4", col2X, 7, btnW, 2, "Disabled", function(self)
-        -- This won't be called since button is disabled
+    local btn4 = components.createButton("btn4", col2X, 7, btnW, 2, "Disabled", function()
+        print("Not clickable")
     end)
     btn4.enabled = false
     

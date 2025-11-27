@@ -94,11 +94,28 @@ function Button:new(id, x, y, width, height, text)
     obj.disabledBgColor = gui.getColor("disabled")
     obj.isHovered = false
     obj.isPressed = false
+    obj.originalBgColor = nil
+    obj.flashTimer = nil
+    obj.enableClickFeedback = true  -- Visual feedback on click
     
     -- Event handlers
     obj:on("click", function(self)
-        if self.enabled and self.callback then
-            self.callback(self)
+        if self.enabled then
+            -- Visual click feedback
+            if self.enableClickFeedback then
+                self.originalBgColor = self.bgColor
+                self.bgColor = colors.white
+                gui.requestRedraw()
+                gui.draw()
+                
+                -- Restore color after brief flash
+                self.flashTimer = os.startTimer(0.15)
+            end
+            
+            -- Execute callback
+            if self.callback then
+                self.callback(self)
+            end
         end
     end)
     
