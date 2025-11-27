@@ -60,6 +60,10 @@ function Panel:draw()
         end
         gui.screen.term.write(titleText)
         contentStartY = 1
+        
+        -- Reset colors after title
+        gui.screen.term.setBackgroundColor(self.bgColor)
+        gui.screen.term.setTextColor(self.fgColor or colors.white)
     end
     
     -- Draw children with scroll offset
