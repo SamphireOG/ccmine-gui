@@ -116,37 +116,69 @@ function dashboard.createProjectScreen()
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
     
-    -- Form Panel (larger to fit all fields)
+    -- Scrollable Form Panel
     local panelH = screenH - 6
     local panel = components.createPanel("form", 3, 3, screenW - 5, panelH, "Project Details")
     panel.borderColor = gui.getColor("border")
+    panel.scrollable = true
     
-    -- Form fields (start at y=5, inside panel)
-    local formY = 5
+    -- Form fields - relative to panel interior (panel.x + 2, panel.y + 2)
+    local formX = 2  -- Relative to panel
+    local formY = 2  -- Start below title
     local inputW = 12
     
-    local nameLbl = components.createLabel("namelbl", 5, formY, "Project Name:")
-    local nameInput = components.createTextInput("name", 5, formY + 1, screenW - 11, "Enter name...")
+    local nameLbl = components.createLabel("namelbl", formX, formY, "Project Name:")
+    nameLbl.parent = panel
+    panel:addChild(nameLbl)
     
-    local mainLbl = components.createLabel("mainlbl", 5, formY + 3, "Main Tunnel L:")
-    local mainTunnelInput = components.createTextInput("main", 5, formY + 4, inputW, "64")
+    local nameInput = components.createTextInput("name", formX, formY + 1, screenW - 11, "Enter name...")
+    nameInput.parent = panel
+    panel:addChild(nameInput)
+    
+    local mainLbl = components.createLabel("mainlbl", formX, formY + 3, "Main Tunnel L:")
+    mainLbl.parent = panel
+    panel:addChild(mainLbl)
+    
+    local mainTunnelInput = components.createTextInput("main", formX, formY + 4, inputW, "64")
     mainTunnelInput.value = "64"
+    mainTunnelInput.parent = panel
+    panel:addChild(mainTunnelInput)
     
-    local sideLbl = components.createLabel("sidelbl", 5, formY + 6, "Side Tunnel L:")
-    local sideTunnelInput = components.createTextInput("side", 5, formY + 7, inputW, "32")
+    local sideLbl = components.createLabel("sidelbl", formX, formY + 6, "Side Tunnel L:")
+    sideLbl.parent = panel
+    panel:addChild(sideLbl)
+    
+    local sideTunnelInput = components.createTextInput("side", formX, formY + 7, inputW, "32")
     sideTunnelInput.value = "32"
+    sideTunnelInput.parent = panel
+    panel:addChild(sideTunnelInput)
     
-    local startLbl = components.createLabel("startlbl", 5, formY + 9, "Starting Y:")
-    local startYInput = components.createTextInput("starty", 5, formY + 10, inputW, "11")
+    local startLbl = components.createLabel("startlbl", formX, formY + 9, "Starting Y:")
+    startLbl.parent = panel
+    panel:addChild(startLbl)
+    
+    local startYInput = components.createTextInput("starty", formX, formY + 10, inputW, "11")
     startYInput.value = "11"
+    startYInput.parent = panel
+    panel:addChild(startYInput)
     
-    local endLbl = components.createLabel("endlbl", 5, formY + 12, "Ending Y:")
-    local endYInput = components.createTextInput("endy", 5, formY + 13, inputW, "64")
+    local endLbl = components.createLabel("endlbl", formX, formY + 12, "Ending Y:")
+    endLbl.parent = panel
+    panel:addChild(endLbl)
+    
+    local endYInput = components.createTextInput("endy", formX, formY + 13, inputW, "64")
     endYInput.value = "64"
+    endYInput.parent = panel
+    panel:addChild(endYInput)
     
     -- Options
-    local torchCheck = components.createCheckbox("torches", 5, formY + 15, "Place torches", true)
-    local wallCheck = components.createCheckbox("walls", 5, formY + 16, "Wall protection", true)
+    local torchCheck = components.createCheckbox("torches", formX, formY + 15, "Place torches", true)
+    torchCheck.parent = panel
+    panel:addChild(torchCheck)
+    
+    local wallCheck = components.createCheckbox("walls", formX, formY + 16, "Wall protection", true)
+    wallCheck.parent = panel
+    panel:addChild(wallCheck)
     
     -- Buttons (at absolute bottom of screen, outside panel)
     local btnW = math.floor((screenW - 10) / 2)
