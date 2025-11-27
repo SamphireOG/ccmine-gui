@@ -60,11 +60,13 @@ function Panel:draw()
         end
         gui.screen.term.write(titleText)
         contentStartY = 1
-        
-        -- Reset colors after title
-        gui.screen.term.setBackgroundColor(self.bgColor)
-        gui.screen.term.setTextColor(self.fgColor or colors.white)
     end
+    
+    -- Always reset colors and cursor position after title/border drawing
+    gui.screen.term.setBackgroundColor(self.bgColor)
+    gui.screen.term.setTextColor(self.fgColor or colors.white)
+    -- Move cursor to safe position (bottom-right of panel)
+    gui.screen.term.setCursorPos(absX + self.width - 1, absY + self.height - 1)
     
     -- Draw children with scroll offset
     for _, child in ipairs(self.children) do
