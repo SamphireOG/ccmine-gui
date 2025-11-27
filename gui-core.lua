@@ -318,9 +318,17 @@ function gui.handleClick(x, y, button)
     -- Find topmost component at position
     local clicked = gui.findComponentAt(x, y)
     
+    -- Unfocus old component if clicking elsewhere
+    if gui.state.focusedComponent and gui.state.focusedComponent ~= clicked then
+        if gui.state.focusedComponent.isFocused ~= nil then
+            gui.state.focusedComponent.isFocused = false
+            gui.screen.term.setCursorBlink(false)
+        end
+    end
+    
     if clicked then
         clicked:emit("click", x, y, button)
-        gui.state.focusedComponent = clicked.id
+        gui.state.focusedComponent = clicked
         return clicked
     end
     
