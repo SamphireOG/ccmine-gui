@@ -346,6 +346,8 @@ function gui.handleDrag(x, y)
 end
 
 function gui.handleScroll(x, y, direction)
+    gui.notify("Scroll: x=" .. x .. " y=" .. y .. " dir=" .. direction, colors.white, colors.purple, 1)
+    
     -- First, find if we're inside any scrollable panel
     local scrollablePanel = nil
     for _, component in pairs(gui.state.components) do
@@ -354,6 +356,7 @@ function gui.handleScroll(x, y, direction)
             if x >= absX and x < absX + component.width and 
                y >= absY and y < absY + component.height then
                 scrollablePanel = component
+                gui.notify("Found panel at " .. absX .. "," .. absY, colors.white, colors.green, 1)
                 break
             end
         end
@@ -361,8 +364,11 @@ function gui.handleScroll(x, y, direction)
     
     -- If we found a scrollable panel, scroll it
     if scrollablePanel then
+        gui.notify("Scrolling panel: offset=" .. scrollablePanel.scrollOffset, colors.white, colors.blue, 1)
         scrollablePanel:emit("scroll", x, y, direction)
         return scrollablePanel
+    else
+        gui.notify("No scrollable panel found!", colors.white, colors.red, 1)
     end
     
     -- Fallback: try to find component and propagate
