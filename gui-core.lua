@@ -489,6 +489,11 @@ function gui.runApp(initialScreen)
     while not gui.state.shouldExit do
         local event, param1, param2, param3 = os.pullEvent()
         
+        -- Debug: show all events
+        if event == "char" or event == "key" then
+            gui.notify("Event: " .. event .. " (" .. tostring(param1) .. ")", colors.white, colors.purple, 1)
+        end
+        
         if event == "mouse_click" then
             gui.handleClick(param2, param3, param1)
             gui.draw()

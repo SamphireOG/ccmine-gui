@@ -264,6 +264,8 @@ function TextInput:new(id, x, y, width)
     obj:on("click", function(self)
         self.isFocused = true
         gui.state.focusedComponent = self
+        -- Debug notification
+        gui.notify("Input focused - type now", colors.white, colors.blue, 2)
         gui.requestRedraw()
     end)
     
@@ -275,9 +277,14 @@ function TextInput:handleChar(char)
         if not self.maxLength or #self.value < self.maxLength then
             self.value = self.value .. char
             self.cursorPos = #self.value
+            -- Debug: show that char was received
+            gui.notify("Typed: " .. char, colors.white, colors.green, 1)
             gui.requestRedraw()
             return true
         end
+    else
+        -- Debug: not focused
+        gui.notify("Not focused!", colors.white, colors.red, 1)
     end
     return false
 end
