@@ -15,6 +15,9 @@ local btnWidth = math.min(screenW - 6, 40)  -- Max 40, min margins
 local btnHeight = 2
 local spacing = 1
 
+-- Event loop control
+local shouldExit = false
+
 -- ========== DEMO 1: BASIC BUTTONS ==========
 
 function demo.basicButtons()
@@ -51,12 +54,10 @@ function demo.basicButtons()
     
     -- Back button
     local backBtn = components.createButton("back", col1X, screenH - 3, btnWidth, 2, "Back to Menu", function()
-        gui.clearComponents()
         demo.mainMenu()
     end)
     
     gui.draw()
-    demo.runEventLoop()
 end
 
 -- ========== DEMO 2: PANELS AND LABELS ==========
@@ -89,12 +90,10 @@ function demo.panelsAndLabels()
     
     -- Back button
     local backBtn = components.createButton("back", 3, screenH - 2, btnWidth, 2, "Back", function()
-        gui.clearComponents()
         demo.mainMenu()
     end)
     
     gui.draw()
-    demo.runEventLoop()
 end
 
 -- ========== DEMO 3: LIST COMPONENT ==========
@@ -124,12 +123,10 @@ function demo.listDemo()
     
     -- Back button
     local backBtn = components.createButton("back", 4, screenH - 2, btnWidth, 2, "Back", function()
-        gui.clearComponents()
         demo.mainMenu()
     end)
     
     gui.draw()
-    demo.runEventLoop()
 end
 
 -- ========== DEMO 4: INPUT AND CHECKBOX ==========
@@ -166,12 +163,10 @@ function demo.inputDemo()
     saveBtn.bgColor = gui.getColor("success")
     
     local backBtn = components.createButton("back", 3 + btnW2 + 2, screenH - 2, btnW2, 2, "Back", function()
-        gui.clearComponents()
         demo.mainMenu()
     end)
     
     gui.draw()
-    demo.runEventLoop()
 end
 
 -- ========== MAIN MENU ==========
@@ -197,41 +192,38 @@ function demo.mainMenu()
     
     -- Create menu buttons
     local btn1 = components.createButton("menu1", menuBtnX, startY, menuBtnW, 2, "1. Basic Buttons", function()
-        gui.clearComponents()
         demo.basicButtons()
     end)
     
     local btn2 = components.createButton("menu2", menuBtnX, startY + 3, menuBtnW, 2, "2. Panels & Labels", function()
-        gui.clearComponents()
         demo.panelsAndLabels()
     end)
     
     local btn3 = components.createButton("menu3", menuBtnX, startY + 6, menuBtnW, 2, "3. List Component", function()
-        gui.clearComponents()
         demo.listDemo()
     end)
     
     local btn4 = components.createButton("menu4", menuBtnX, startY + 9, menuBtnW, 2, "4. Inputs & Forms", function()
-        gui.clearComponents()
         demo.inputDemo()
     end)
     
     -- Exit button
     local exitBtn = components.createButton("exit", menuBtnX, screenH - 2, menuBtnW, 2, "Exit", function()
-        gui.clearComponents()
-        gui.clear()
-        print("Exited")
+        shouldExit = true
     end)
     exitBtn.bgColor = gui.getColor("error")
     
     gui.draw()
-    demo.runEventLoop()
 end
 
 -- ========== EVENT LOOP ==========
 
-function demo.runEventLoop()
-    while true do
+function demo.run()
+    -- Start with main menu
+    demo.mainMenu()
+    
+    -- Single event loop for entire demo
+    while not shouldExit do
         local event, param1, param2, param3 = os.pullEvent()
         
         if event == "mouse_click" then
@@ -244,19 +236,15 @@ function demo.runEventLoop()
             gui.draw()
         elseif event == "key" then
             if param1 == keys.q then
-                gui.clearComponents()
-                gui.clear()
-                print("Exited")
-                break
+                shouldExit = true
             end
         end
     end
-end
-
--- ========== RUN DEMO ==========
-
-function demo.run()
-    demo.mainMenu()
+    
+    -- Clean exit
+    gui.clearComponents()
+    gui.clear()
+    print("CCMine GUI Demo Exited")
 end
 
 -- Auto-run if executed directly
