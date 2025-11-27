@@ -3,6 +3,7 @@
 
 local guiCore = require("gui-core")
 local gui = guiCore
+local Component = gui.Component
 local components = require("gui-components")
 
 local layouts = {}
@@ -412,10 +413,10 @@ end
 -- Automatically stacks form fields (label above input)
 
 local FormLayout = {}
-setmetatable(FormLayout, {__index = gui.Component})
+setmetatable(FormLayout, {__index = Component})
 
 function FormLayout:new(id, x, y, width)
-    local obj = gui.Component:new(id, "formlayout", x, y, width, 1)
+    local obj = Component:new(id, "formlayout", x, y, width, 1)
     setmetatable(obj, {__index = FormLayout})
     
     obj.fieldSpacing = 1  -- Space between fields
