@@ -346,9 +346,28 @@ function gui.handleDrag(x, y)
 end
 
 function gui.handleScroll(x, y, direction)
+    -- First, find if we're inside any scrollable panel
+    local scrollablePanel = nil
+    for _, component in pairs(gui.state.components) do
+        if component.type == "panel" and component.scrollable and component.visible then
+            local absX, absY = component:getAbsolutePosition()
+            if x >= absX and x < absX + component.width and 
+               y >= absY and y < absY + component.height then
+                scrollablePanel = component
+                break
+            end
+        end
+    end
+    
+    -- If we found a scrollable panel, scroll it
+    if scrollablePanel then
+        scrollablePanel:emit("scroll", x, y, direction)
+        return scrollablePanel
+    end
+    
+    -- Fallback: try to find component and propagate
     local component = gui.findComponentAt(x, y)
     if component then
-        -- Emit scroll to the component
         component:emit("scroll", x, y, direction)
         
         -- Propagate scroll up to parent panels
@@ -357,7 +376,7 @@ function gui.handleScroll(x, y, direction)
             current = current.parent
             if current.type == "panel" and current.scrollable then
                 current:emit("scroll", x, y, direction)
-                break  -- Stop at first scrollable panel
+                break
             end
         end
         
