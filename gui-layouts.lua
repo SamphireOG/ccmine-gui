@@ -412,10 +412,10 @@ end
 -- Automatically stacks form fields (label above input)
 
 local FormLayout = {}
-setmetatable(FormLayout, {__index = VerticalLayout})
+setmetatable(FormLayout, {__index = gui.Component})
 
 function FormLayout:new(id, x, y, width)
-    local obj = VerticalLayout:new(id, x, y, width, 0)
+    local obj = gui.Component:new(id, "formlayout", x, y, width, 1)
     setmetatable(obj, {__index = FormLayout})
     
     obj.fieldSpacing = 1  -- Space between fields
@@ -426,16 +426,17 @@ function FormLayout:new(id, x, y, width)
 end
 
 function FormLayout:addField(labelText, inputPlaceholder, inputWidth, defaultValue)
-    local fieldY = self.y + (#self.children * (self.labelHeight + self.inputHeight + self.fieldSpacing))
+    local currentFieldCount = math.floor(#self.children / 2)  -- Each field is label + input
+    local fieldY = self.y + (currentFieldCount * (self.labelHeight + self.inputHeight + self.fieldSpacing))
     
     -- Create label
-    local labelId = self.id .. "_lbl_" .. #self.children
+    local labelId = self.id .. "_lbl_" .. currentFieldCount
     local label = components.createLabel(labelId, self.x, fieldY, labelText)
     label.parent = self
     table.insert(self.children, label)
     
     -- Create input below label
-    local inputId = self.id .. "_input_" .. #self.children
+    local inputId = self.id .. "_input_" .. currentFieldCount
     local input = components.createTextInput(inputId, self.x, fieldY + 1, inputWidth or self.width, inputPlaceholder)
     if defaultValue then
         input.value = defaultValue
@@ -444,9 +445,18 @@ function FormLayout:addField(labelText, inputPlaceholder, inputWidth, defaultVal
     table.insert(self.children, input)
     
     -- Update layout height
-    self.height = fieldY + self.inputHeight + self.fieldSpacing - self.y
+    self.height = (currentFieldCount + 1) * (self.labelHeight + self.inputHeight + self.fieldSpacing)
     
     return input
+end
+
+function FormLayout:draw()
+    -- FormLayout container is invisible, but always draw its children
+    for _, child in ipairs(self.children) do
+        if child.visible then
+            child:draw()
+        end
+    end
 end
 
 layouts.FormLayout = FormLayout
