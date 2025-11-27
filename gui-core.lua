@@ -137,17 +137,29 @@ end
 
 function Component:isPointInside(x, y)
     if not self.visible then return false end
-    return x >= self.x and x < self.x + self.width and
-           y >= self.y and y < self.y + self.height
+    
+    -- Get absolute position (accounts for parent offset and scroll)
+    local absX, absY = self:getAbsolutePosition()
+    
+    return x >= absX and x < absX + self.width and
+           y >= absY and y < absY + self.height
 end
 
 function Component:getAbsolutePosition()
     local absX, absY = self.x, self.y
+    
+    -- Account for parent scroll offset
     if self.parent then
         local parentX, parentY = self.parent:getAbsolutePosition()
         absX = absX + parentX
         absY = absY + parentY
+        
+        -- Apply scroll offset if parent is a scrollable panel
+        if self.parent.type == "panel" and self.parent.scrollable then
+            absY = absY - self.parent.scrollOffset
+        end
     end
+    
     return absX, absY
 end
 
