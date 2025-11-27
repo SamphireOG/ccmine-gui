@@ -3,6 +3,7 @@
 
 local gui = require("gui-core")
 local components = require("gui-components")
+local layouts = require("gui-layouts")
 
 local dashboard = {}
 
@@ -153,23 +154,17 @@ function dashboard.createProjectScreen()
     local panel = components.createPanel("form", 3, 3, screenW - 5, screenH - 6, "Project Details")
     panel.borderColor = gui.getColor("border")
     
-    -- Project Name Input
-    local nameLbl = components.createLabel("namelbl", 5, 5, "Project Name:")
-    local nameInput = components.createTextInput("name", 5, 6, screenW - 11, "Enter project name...")
+    -- Auto-layout form (no manual positioning needed!)
+    local form = layouts.createFormLayout("projectForm", 5, 5, screenW - 11)
     
-    -- Tunnel Length
-    local lengthLbl = components.createLabel("lengthlbl", 5, 8, "Tunnel Length:")
-    local lengthInput = components.createTextInput("length", 5, 9, 12, "32")
-    lengthInput.value = "32"
+    local nameInput = form:addField("Project Name:", "Enter project name...", screenW - 11, "")
+    local lengthInput = form:addField("Tunnel Length:", "32", 12, "32")
+    local spacingInput = form:addField("Tunnel Spacing:", "4", 12, "4")
     
-    -- Tunnel Spacing (on separate line)
-    local spacingLbl = components.createLabel("spacinglbl", 5, 11, "Tunnel Spacing:")
-    local spacingInput = components.createTextInput("spacing", 5, 12, 12, "4")
-    spacingInput.value = "4"
-    
-    -- Options
-    local torchCheck = components.createCheckbox("torches", 5, 14, "Place torches", true)
-    local wallCheck = components.createCheckbox("walls", 5, 15, "Wall protection", true)
+    -- Options (positioned after form)
+    local optionsY = 5 + form.height + 2
+    local torchCheck = components.createCheckbox("torches", 5, optionsY, "Place torches", true)
+    local wallCheck = components.createCheckbox("walls", 5, optionsY + 1, "Wall protection", true)
     
     -- Buttons
     local btnW = math.floor((screenW - 10) / 2)

@@ -3,6 +3,7 @@
 
 local guiCore = require("gui-core")
 local gui = guiCore
+local components = require("gui-components")
 
 local layouts = {}
 
@@ -405,6 +406,54 @@ layouts.LayoutManager = LayoutManager
 
 function layouts.createManager()
     return LayoutManager:new()
+end
+
+-- ========== FORM LAYOUT ==========
+-- Automatically stacks form fields (label above input)
+
+local FormLayout = {}
+setmetatable(FormLayout, {__index = VerticalLayout})
+
+function FormLayout:new(id, x, y, width)
+    local obj = VerticalLayout:new(id, x, y, width, 0)
+    setmetatable(obj, {__index = FormLayout})
+    
+    obj.fieldSpacing = 1  -- Space between fields
+    obj.labelHeight = 1
+    obj.inputHeight = 1
+    
+    return obj
+end
+
+function FormLayout:addField(labelText, inputPlaceholder, inputWidth, defaultValue)
+    local fieldY = self.y + (#self.children * (self.labelHeight + self.inputHeight + self.fieldSpacing))
+    
+    -- Create label
+    local labelId = self.id .. "_lbl_" .. #self.children
+    local label = components.createLabel(labelId, self.x, fieldY, labelText)
+    label.parent = self
+    table.insert(self.children, label)
+    
+    -- Create input below label
+    local inputId = self.id .. "_input_" .. #self.children
+    local input = components.createTextInput(inputId, self.x, fieldY + 1, inputWidth or self.width, inputPlaceholder)
+    if defaultValue then
+        input.value = defaultValue
+    end
+    input.parent = self
+    table.insert(self.children, input)
+    
+    -- Update layout height
+    self.height = fieldY + self.inputHeight + self.fieldSpacing - self.y
+    
+    return input
+end
+
+layouts.FormLayout = FormLayout
+
+function layouts.createFormLayout(id, x, y, width)
+    local layout = FormLayout:new(id, x, y, width)
+    return gui.registerComponent(layout)
 end
 
 return layouts
