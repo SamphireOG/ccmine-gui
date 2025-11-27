@@ -18,7 +18,9 @@ gui.state = {
     hoveredComponent = nil,
     isDragging = false,
     needsRedraw = true,
-    eventListeners = {}
+    eventListeners = {},
+    currentScreen = nil,
+    shouldExit = false
 }
 
 -- ========== THEME SYSTEM ==========
@@ -243,6 +245,16 @@ function gui.removeComponent(id)
 end
 
 function gui.clearComponents()
+    -- Properly destroy all components first
+    for id, component in pairs(gui.state.components) do
+        if component.events then
+            component.events = {}
+        end
+        if component.children then
+            component.children = {}
+        end
+    end
+    
     gui.state.components = {}
     gui.state.focusedComponent = nil
     gui.state.hoveredComponent = nil
@@ -425,6 +437,70 @@ function gui.wrapText(text, maxWidth)
     end
     
     return lines
+end
+
+-- ========== SCREEN MANAGEMENT ==========
+
+function gui.setScreen(screenFunction)
+    -- Clear old screen
+    gui.clearComponents()
+    gui.clear()
+    
+    -- Set new screen
+    gui.state.currentScreen = screenFunction
+    
+    -- Draw new screen
+    if screenFunction then
+        screenFunction()
+    end
+    
+    gui.requestRedraw()
+    gui.draw()
+end
+
+function gui.refreshScreen()
+    if gui.state.currentScreen then
+        gui.setScreen(gui.state.currentScreen)
+    end
+end
+
+-- ========== BUILT-IN EVENT LOOP ==========
+
+function gui.runApp(initialScreen)
+    -- Set initial screen
+    gui.setScreen(initialScreen)
+    
+    -- Main event loop
+    while not gui.state.shouldExit do
+        local event, param1, param2, param3 = os.pullEvent()
+        
+        if event == "mouse_click" then
+            gui.handleClick(param2, param3, param1)
+            gui.draw()
+        elseif event == "mouse_move" then
+            gui.handleMouseMove(param2, param3)
+            gui.draw()
+        elseif event == "mouse_scroll" then
+            gui.handleScroll(param2, param3, param1)
+            gui.draw()
+        elseif event == "key" then
+            -- Allow Q key to exit by default
+            if param1 == keys.q then
+                gui.state.shouldExit = true
+            end
+        elseif event == "term_resize" then
+            gui.init()
+            gui.refreshScreen()
+        end
+    end
+    
+    -- Clean exit
+    gui.clearComponents()
+    gui.clear()
+end
+
+function gui.exit()
+    gui.state.shouldExit = true
 end
 
 return gui

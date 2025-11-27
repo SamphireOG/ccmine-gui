@@ -14,6 +14,7 @@ local CORE_FILES = {
 local EXAMPLE_FILES = {
     "gui-demo.lua",
     "gui-demo-responsive.lua",
+    "gui-demo-clean.lua",
     "main.lua"
 }
 
@@ -137,30 +138,38 @@ end
 local function createStartupFile(startupType)
     print("")
     print("Create startup file? This will auto-run on boot.")
-    print("1. Responsive Demo (recommended for CC)")
-    print("2. Full Demo")
-    print("3. Example app (main.lua)")
-    print("4. No startup file")
+    print("1. Clean Demo (uses framework features)")
+    print("2. Responsive Demo (CC-optimized)")
+    print("3. Full Demo")
+    print("4. Example app (main.lua)")
+    print("5. No startup file")
     print("")
-    print("Enter choice (1-4):")
+    print("Enter choice (1-5):")
     local choice = read()
     
     local startupContent
     if choice == "1" then
+        startupContent = [[-- CCMine GUI Framework - Auto-start Clean Demo
+print("Starting CCMine GUI Demo...")
+sleep(1)
+local demo = require("gui-demo-clean")
+demo.run()
+]]
+    elseif choice == "2" then
         startupContent = [[-- CCMine GUI Framework - Auto-start Responsive Demo
 print("Starting CCMine GUI Demo...")
 sleep(1)
 local demo = require("gui-demo-responsive")
 demo.run()
 ]]
-    elseif choice == "2" then
+    elseif choice == "3" then
         startupContent = [[-- CCMine GUI Framework - Auto-start Full Demo
 print("Starting CCMine GUI Demo...")
 sleep(1)
 local demo = require("gui-demo")
 demo.run()
 ]]
-    elseif choice == "3" then
+    elseif choice == "4" then
         startupContent = [[-- CCMine GUI Framework - Auto-start App
 print("Starting CCMine Application...")
 sleep(1)
