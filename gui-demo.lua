@@ -21,18 +21,18 @@ function demo.basicButtons()
     local col2X = math.floor(screenW / 2) + 2
     local btnW = math.floor((screenW - 8) / 2)
     
-    -- Create buttons (visual feedback is now built into framework!)
+    -- Create buttons with notifications
     local btn1 = components.createButton("btn1", col1X, 4, btnW, 2, "Click Me", function(self)
-        -- Button automatically flashes white on click
+        gui.notify("Button 1 clicked!", colors.white, colors.blue, 2)
     end)
     
     local btn2 = components.createButton("btn2", col2X, 4, btnW, 2, "Success", function(self)
-        -- Button automatically flashes white on click
+        gui.notify("Success!", colors.white, colors.green, 2)
     end)
     btn2.bgColor = gui.getColor("success")
     
     local btn3 = components.createButton("btn3", col1X, 7, btnW, 2, "Warning", function(self)
-        -- Button automatically flashes white on click
+        gui.notify("Warning issued!", colors.black, colors.yellow, 2)
     end)
     btn3.bgColor = gui.getColor("warning")
     
@@ -41,7 +41,7 @@ function demo.basicButtons()
     end)
     btn4.enabled = false
     
-    -- Back button (uses new setScreen)
+    -- Back button
     local backBtn = components.createButton("back", col1X, screenH - 3, btnWidth, 2, "Back to Menu", function()
         gui.setScreen(demo.mainMenu)
     end)
@@ -93,7 +93,7 @@ function demo.listDemo()
     taskList:addItem("5. Check Status", {id = 5})
     
     taskList.onSelect = function(item)
-        print("Selected: " .. item.text)
+        gui.notify("Selected: " .. item.text, colors.white, colors.blue, 2)
     end
     
     -- Back button
@@ -126,7 +126,7 @@ function demo.inputDemo()
     -- Buttons
     local btnW2 = math.floor((btnWidth - 2) / 2)
     local saveBtn = components.createButton("save", 3, screenH - 2, btnW2, 2, "Save", function()
-        print("Saved!")
+        gui.notify("Configuration saved!", colors.white, colors.green, 2)
     end)
     saveBtn.bgColor = gui.getColor("success")
     

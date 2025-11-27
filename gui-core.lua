@@ -20,7 +20,11 @@ gui.state = {
     needsRedraw = true,
     eventListeners = {},
     currentScreen = nil,
-    shouldExit = false
+    shouldExit = false,
+    notification = "",
+    notificationColor = colors.white,
+    notificationBg = colors.gray,
+    notificationTimer = nil
 }
 
 -- ========== THEME SYSTEM ==========
@@ -302,6 +306,9 @@ function gui.draw()
         component:draw()
     end
     
+    -- Draw notification bar (always on bottom)
+    gui.drawNotificationBar()
+    
     gui.state.needsRedraw = false
 end
 
@@ -496,6 +503,11 @@ function gui.runApp(initialScreen)
                     end
                 end
             end
+            
+            -- Clear notification after timeout
+            if gui.state.notificationTimer == param1 then
+                gui.clearNotification()
+            end
         elseif event == "key" then
             -- Allow Q key to exit by default
             if param1 == keys.q then
@@ -514,6 +526,55 @@ end
 
 function gui.exit()
     gui.state.shouldExit = true
+end
+
+-- ========== NOTIFICATION SYSTEM ==========
+
+function gui.notify(message, color, bgColor, duration)
+    -- Show a notification in the bottom bar
+    gui.state.notification = message or ""
+    gui.state.notificationColor = color or colors.white
+    gui.state.notificationBg = bgColor or colors.gray
+    
+    -- Clear existing timer
+    if gui.state.notificationTimer then
+        gui.state.notificationTimer = nil
+    end
+    
+    -- Set auto-clear timer if duration specified
+    if duration and duration > 0 then
+        gui.state.notificationTimer = os.startTimer(duration)
+    end
+    
+    gui.requestRedraw()
+    gui.draw()
+end
+
+function gui.clearNotification()
+    gui.state.notification = ""
+    gui.state.notificationTimer = nil
+    gui.requestRedraw()
+    gui.draw()
+end
+
+function gui.drawNotificationBar()
+    -- Draw bottom bar for notifications
+    local y = gui.screen.height
+    
+    gui.screen.term.setCursorPos(1, y)
+    gui.screen.term.setBackgroundColor(gui.state.notificationBg)
+    gui.screen.term.setTextColor(gui.state.notificationColor)
+    
+    if gui.state.notification and #gui.state.notification > 0 then
+        -- Center the notification
+        local text = gui.truncateText(gui.state.notification, gui.screen.width - 2)
+        local padding = math.floor((gui.screen.width - #text) / 2)
+        local line = string.rep(" ", padding) .. text .. string.rep(" ", gui.screen.width - padding - #text)
+        gui.screen.term.write(line)
+    else
+        -- Empty bar
+        gui.screen.term.write(string.rep(" ", gui.screen.width))
+    end
 end
 
 return gui
