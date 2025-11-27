@@ -81,7 +81,7 @@ function dashboard.mainScreen()
     
     -- Project List Panel
     local panelH = screenH - 7
-    local panel = components.createPanel("projects", 2, 7, screenW - 3, panelH, "Projects")
+    local panel = components.createPanel("projects", 2, 7, screenW - 4, panelH, "Projects")
     panel.borderColor = gui.getColor("border")
     
     -- Load and display projects

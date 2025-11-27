@@ -38,21 +38,26 @@ function Panel:draw()
         gui.screen.term.write(string.rep(" ", self.width))
     end
     
-    -- Draw title bar if exists
+    -- Draw border first
+    if self.borderColor then
+        self:drawBorder(absX, absY)
+    end
+    
+    -- Draw title bar on top of border
     local contentStartY = 0
     if self.title then
         gui.screen.term.setCursorPos(absX, absY)
         gui.screen.term.setBackgroundColor(self.titleBgColor)
         gui.screen.term.setTextColor(self.titleFgColor)
         local titleText = " " .. self.title .. " "
-        titleText = titleText .. string.rep(" ", self.width - #titleText)
+        -- Ensure title fits within panel width
+        if #titleText > self.width then
+            titleText = titleText:sub(1, self.width)
+        else
+            titleText = titleText .. string.rep(" ", math.max(0, self.width - #titleText))
+        end
         gui.screen.term.write(titleText)
         contentStartY = 1
-    end
-    
-    -- Draw border
-    if self.borderColor then
-        self:drawBorder(absX, absY)
     end
     
     -- Draw children with scroll offset
