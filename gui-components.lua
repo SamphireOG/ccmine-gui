@@ -263,10 +263,48 @@ function TextInput:new(id, x, y, width)
     
     obj:on("click", function(self)
         self.isFocused = true
+        gui.state.focusedComponent = self
         gui.requestRedraw()
     end)
     
     return obj
+end
+
+function TextInput:handleChar(char)
+    if self.isFocused then
+        if not self.maxLength or #self.value < self.maxLength then
+            self.value = self.value .. char
+            self.cursorPos = #self.value
+            gui.requestRedraw()
+            return true
+        end
+    end
+    return false
+end
+
+function TextInput:handleKey(key)
+    if self.isFocused then
+        if key == keys.backspace then
+            if #self.value > 0 then
+                self.value = self.value:sub(1, -2)
+                self.cursorPos = #self.value
+                gui.requestRedraw()
+            end
+            return true
+        elseif key == keys.delete then
+            self.value = ""
+            self.cursorPos = 0
+            gui.requestRedraw()
+            return true
+        elseif key == keys.enter then
+            self.isFocused = false
+            gui.state.focusedComponent = nil
+            gui.screen.term.setCursorBlink(false)
+            gui.requestRedraw()
+            return true
+        end
+    end
+    return false
 end
 
 function TextInput:draw()
@@ -302,6 +340,8 @@ function TextInput:draw()
     if self.isFocused then
         gui.screen.term.setCursorPos(absX + 1 + #self.value, absY)
         gui.screen.term.setCursorBlink(true)
+    else
+        gui.screen.term.setCursorBlink(false)
     end
 end
 

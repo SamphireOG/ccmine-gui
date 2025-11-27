@@ -508,9 +508,22 @@ function gui.runApp(initialScreen)
             if gui.state.notificationTimer == param1 then
                 gui.clearNotification()
             end
+        elseif event == "char" then
+            -- Dispatch to focused component
+            if gui.state.focusedComponent and gui.state.focusedComponent.handleChar then
+                gui.state.focusedComponent:handleChar(param1)
+                gui.draw()
+            end
         elseif event == "key" then
-            -- Allow Q key to exit by default
-            if param1 == keys.q then
+            -- Dispatch to focused component first
+            local handled = false
+            if gui.state.focusedComponent and gui.state.focusedComponent.handleKey then
+                handled = gui.state.focusedComponent:handleKey(param1)
+                gui.draw()
+            end
+            
+            -- Allow Q key to exit by default (if not handled)
+            if not handled and param1 == keys.q then
                 gui.state.shouldExit = true
             end
         elseif event == "term_resize" then
