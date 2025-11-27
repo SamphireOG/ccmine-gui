@@ -46,15 +46,17 @@ function Panel:draw()
     -- Draw title bar on top of border
     local contentStartY = 0
     if self.title then
-        gui.screen.term.setCursorPos(absX, absY)
+        -- Title needs to fit INSIDE the border (width - 2 for left/right border)
+        local titleWidth = self.borderColor and (self.width - 2) or self.width
+        gui.screen.term.setCursorPos(absX + 1, absY)  -- +1 to skip left border
         gui.screen.term.setBackgroundColor(self.titleBgColor)
         gui.screen.term.setTextColor(self.titleFgColor)
         local titleText = " " .. self.title .. " "
-        -- Ensure title fits within panel width
-        if #titleText > self.width then
-            titleText = titleText:sub(1, self.width)
+        -- Ensure title fits within available width
+        if #titleText > titleWidth then
+            titleText = titleText:sub(1, titleWidth)
         else
-            titleText = titleText .. string.rep(" ", math.max(0, self.width - #titleText))
+            titleText = titleText .. string.rep(" ", math.max(0, titleWidth - #titleText))
         end
         gui.screen.term.write(titleText)
         contentStartY = 1
