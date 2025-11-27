@@ -19,6 +19,7 @@ local spacing = 1
 
 function demo.basicButtons()
     gui.clearComponents()
+    gui.clear()
     
     -- Title
     gui.centerText("Basic Buttons", 1, gui.getColor("primary"), colors.white)
@@ -62,6 +63,7 @@ end
 
 function demo.panelsAndLabels()
     gui.clearComponents()
+    gui.clear()
     
     -- Title
     gui.centerText("Panels & Labels", 1, gui.getColor("primary"), colors.white)
@@ -99,6 +101,7 @@ end
 
 function demo.listDemo()
     gui.clearComponents()
+    gui.clear()
     
     -- Title
     gui.centerText("Task List", 1, gui.getColor("primary"), colors.white)
@@ -133,6 +136,7 @@ end
 
 function demo.inputDemo()
     gui.clearComponents()
+    gui.clear()
     
     -- Title
     gui.centerText("Configuration", 1, gui.getColor("primary"), colors.white)
@@ -174,6 +178,7 @@ end
 
 function demo.mainMenu()
     gui.clearComponents()
+    gui.clear()
     
     -- Title bar
     gui.screen.term.setBackgroundColor(gui.getColor("primary"))
