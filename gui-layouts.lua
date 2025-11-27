@@ -430,19 +430,19 @@ function FormLayout:addField(labelText, inputPlaceholder, inputWidth, defaultVal
     local currentFieldCount = math.floor(#self.children / 2)  -- Each field is label + input
     local fieldY = self.y + (currentFieldCount * (self.labelHeight + self.inputHeight + self.fieldSpacing))
     
-    -- Create label
+    -- Create label (will be drawn by main loop, not by FormLayout)
     local labelId = self.id .. "_lbl_" .. currentFieldCount
     local label = components.createLabel(labelId, self.x, fieldY, labelText)
-    label.parent = self
+    -- Don't set parent - let main loop draw it
     table.insert(self.children, label)
     
-    -- Create input below label
+    -- Create input below label (will be drawn by main loop)
     local inputId = self.id .. "_input_" .. currentFieldCount
     local input = components.createTextInput(inputId, self.x, fieldY + 1, inputWidth or self.width, inputPlaceholder)
     if defaultValue then
         input.value = defaultValue
     end
-    input.parent = self
+    -- Don't set parent - let main loop draw it
     table.insert(self.children, input)
     
     -- Update layout height
@@ -452,12 +452,8 @@ function FormLayout:addField(labelText, inputPlaceholder, inputWidth, defaultVal
 end
 
 function FormLayout:draw()
-    -- FormLayout container is invisible, but always draw its children
-    for _, child in ipairs(self.children) do
-        if child.visible then
-            child:draw()
-        end
-    end
+    -- FormLayout is just a helper for positioning
+    -- Children are drawn by main loop since they have no parent
 end
 
 layouts.FormLayout = FormLayout
