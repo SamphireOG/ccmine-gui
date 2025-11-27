@@ -335,139 +335,63 @@ local function main()
     term.setCursorPos(1, 1)
     
     print("============================")
-    print("  CCMine GUI Framework")
-    print("  Installer v" .. VERSION)
+    print("    CCMine - Mining System")
+    print("    Version " .. VERSION)
     print("============================")
     print("")
+    print("Installing...")
+    print("")
     
-    -- Detect device type
-    local deviceType = "computer"
-    if turtle then
-        print("Detected: Turtle")
-        deviceType = "turtle"
-    elseif pocket then
-        print("Detected: Pocket Computer")
-        deviceType = "pocket"
-    else
-        print("Detected: Computer")
+    -- Install everything automatically
+    local coreSuccess = installCore()
+    
+    if not coreSuccess then
+        print("")
+        print("ERROR: Download failed!")
+        print("Check your internet connection.")
+        return
     end
     
-    print("")
-    print("This GUI framework works on all devices!")
-    print("")
+    installExamples()
     
-    -- Installation method
-    print("Installation method:")
-    print("1. Download from GitHub (recommended)")
-    print("2. Install from local files")
-    print("3. Show manual instructions")
-    print("4. Cancel")
-    print("")
-    print("Enter choice (1-4):")
-    local method = read()
-    
-    if method == "4" then
-        print("Installation cancelled.")
-        return
-    elseif method == "3" then
-        showManualInstructions()
-        return
-    elseif method == "2" then
-        if not installFromLocal() then
-            return
-        end
-    else
-        -- GitHub installation
-        print("")
-        print("Starting download from GitHub...")
-        print("")
-        
-        -- Core files (required)
-        local coreSuccess = installCore()
-        
-        if not coreSuccess then
-            print("")
-            print("CRITICAL: Core files failed to download!")
-            print("Cannot continue installation.")
-            print("")
-            print("Try:")
-            print("1. Check internet connection")
-            print("2. Verify GitHub repository exists")
-            print("3. Try manual installation")
-            return
-        end
-        
-        -- Examples (optional)
-        print("")
-        print("Install examples and demo? (Y/N)")
-        local installEx = read()
-        
-        if installEx:lower() == "y" then
-            installExamples()
-        end
-        
-        -- Documentation (optional)
-        print("")
-        print("Install documentation? (Y/N)")
-        local installDo = read()
-        
-        if installDo:lower() == "y" then
-            installDocs()
-        end
-    end
-    
-    -- Verify installation
+    -- Verify
     if not verifyInstallation() then
         print("")
-        print("Continue anyway? (Y/N)")
-        local cont = read()
-        if cont:lower() ~= "y" then
-            return
-        end
+        print("WARNING: Some files missing!")
+        print("Continuing anyway...")
     end
     
-    -- Test framework
-    testFramework()
+    -- Create auto-start file
+    print("")
+    print("Creating startup file...")
+    local startupContent = [[-- CCMine Dashboard Auto-start
+print("Starting Mine Dashboard...")
+sleep(0.5)
+local dashboard = require("mine-dashboard")
+dashboard.run()
+]]
     
-    -- Create startup file
-    createStartupFile()
+    local file = fs.open("startup.lua", "w")
+    if file then
+        file.write(startupContent)
+        file.close()
+    end
     
-    -- Final instructions
+    -- Success!
     print("")
     print("============================")
     print("  Installation Complete!")
     print("============================")
     print("")
-    print("Quick start:")
-    print("")
-    print("Run the Mine Dashboard:")
-    print("  lua> dashboard = require('mine-dashboard')")
-    print("  lua> dashboard.run()")
-    print("")
-    print("Run the GUI demo:")
-    print("  lua> demo = require('gui-demo')")
-    print("  lua> demo.run()")
-    print("")
-    print("Read documentation:")
-    print("  - README.md (full API)")
-    print("  - QUICKSTART.md (5-min guide)")
-    print("")
-    print("Start mining!")
-    print("")
+    print("Launching Mine Dashboard...")
+    sleep(2)
     
-    if fs.exists("mine-dashboard.lua") then
-        print("Launch Mine Dashboard now? (Y/N)")
-        local launch = read()
-        
-        if launch:lower() == "y" then
-            print("")
-            print("Starting dashboard in 2 seconds...")
-            sleep(2)
-            
-            local dashboard = require("mine-dashboard")
-            dashboard.run()
-        end
-    end
+    term.clear()
+    term.setCursorPos(1, 1)
+    
+    -- Launch dashboard
+    local dashboard = require("mine-dashboard")
+    dashboard.run()
 end
 
 -- Run installer
