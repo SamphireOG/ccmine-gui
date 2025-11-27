@@ -155,7 +155,7 @@ function Component:getAbsolutePosition()
         absY = absY + parentY
         
         -- Apply scroll offset if parent is a scrollable panel
-        if self.parent.type == "panel" and self.parent.scrollable then
+        if self.parent.type == "panel" and self.parent.scrollable and self.parent.scrollOffset then
             absY = absY - self.parent.scrollOffset
         end
     end
@@ -329,6 +329,17 @@ end
 function gui.handleClick(x, y, button)
     -- Find topmost component at position
     local clicked = gui.findComponentAt(x, y)
+    
+    if clicked then
+        local absX, absY = clicked:getAbsolutePosition()
+        local scrollInfo = ""
+        if clicked.parent and clicked.parent.scrollOffset then
+            scrollInfo = " scroll=" .. clicked.parent.scrollOffset
+        end
+        gui.notify("Click@" .. x .. "," .. y .. " -> " .. clicked.type .. "@" .. absX .. "," .. absY .. scrollInfo, colors.white, colors.lime, 2)
+    else
+        gui.notify("Click@" .. x .. "," .. y .. " -> MISS", colors.white, colors.red, 2)
+    end
     
     -- Unfocus old component if clicking elsewhere
     if gui.state.focusedComponent and gui.state.focusedComponent ~= clicked then
