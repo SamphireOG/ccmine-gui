@@ -13,6 +13,7 @@ local CORE_FILES = {
 
 local EXAMPLE_FILES = {
     "gui-demo.lua",
+    "gui-demo-responsive.lua",
     "main.lua"
 }
 
@@ -136,22 +137,30 @@ end
 local function createStartupFile(startupType)
     print("")
     print("Create startup file? This will auto-run on boot.")
-    print("1. Demo (gui-demo.lua)")
-    print("2. Example app (main.lua)")
-    print("3. No startup file")
+    print("1. Responsive Demo (recommended for CC)")
+    print("2. Full Demo")
+    print("3. Example app (main.lua)")
+    print("4. No startup file")
     print("")
-    print("Enter choice (1-3):")
+    print("Enter choice (1-4):")
     local choice = read()
     
     local startupContent
     if choice == "1" then
-        startupContent = [[-- CCMine GUI Framework - Auto-start Demo
+        startupContent = [[-- CCMine GUI Framework - Auto-start Responsive Demo
+print("Starting CCMine GUI Demo...")
+sleep(1)
+local demo = require("gui-demo-responsive")
+demo.run()
+]]
+    elseif choice == "2" then
+        startupContent = [[-- CCMine GUI Framework - Auto-start Full Demo
 print("Starting CCMine GUI Demo...")
 sleep(1)
 local demo = require("gui-demo")
 demo.run()
 ]]
-    elseif choice == "2" then
+    elseif choice == "3" then
         startupContent = [[-- CCMine GUI Framework - Auto-start App
 print("Starting CCMine Application...")
 sleep(1)
@@ -431,11 +440,15 @@ local function main()
     print("")
     print("Quick start:")
     print("")
-    print("Run the demo:")
+    print("Responsive demo (fits CC screens):")
+    print("  lua> demo = require('gui-demo-responsive')")
+    print("  lua> demo.run()")
+    print("")
+    print("Full demo (larger screens):")
     print("  lua> demo = require('gui-demo')")
     print("  lua> demo.run()")
     print("")
-    print("Run example app:")
+    print("Example app:")
     print("  lua> app = require('main')")
     print("  lua> app.run()")
     print("")
@@ -446,8 +459,8 @@ local function main()
     print("Start building your GUI!")
     print("")
     
-    if fs.exists("gui-demo.lua") then
-        print("Launch demo now? (Y/N)")
+    if fs.exists("gui-demo-responsive.lua") then
+        print("Launch responsive demo now? (Y/N)")
         local launch = read()
         
         if launch:lower() == "y" then
@@ -455,7 +468,7 @@ local function main()
             print("Starting demo in 2 seconds...")
             sleep(2)
             
-            local demo = require("gui-demo")
+            local demo = require("gui-demo-responsive")
             demo.run()
         end
     end
