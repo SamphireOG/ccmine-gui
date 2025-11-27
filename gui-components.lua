@@ -262,27 +262,44 @@ function TextInput:new(id, x, y, width)
     obj.focusBorderColor = gui.getColor("primary")
     
     obj:on("click", function(self)
-        -- Use ComputerCraft's native read() function
-        local absX, absY = self:getAbsolutePosition()
-        gui.screen.term.setCursorPos(absX + 1, absY)
-        gui.screen.term.setBackgroundColor(self.bgColor)
-        gui.screen.term.setTextColor(self.fgColor)
-        gui.screen.term.setCursorBlink(true)
-        
-        -- Read input using native ComputerCraft function
-        local input = read(nil, nil, nil, self.value)
-        
-        if input then
-            self.value = input
-            self.cursorPos = #input
-        end
-        
-        gui.screen.term.setCursorBlink(false)
+        self.isFocused = true
+        self.cursorPos = #self.value
+        gui.state.focusedComponent = self
         gui.requestRedraw()
-        gui.draw()
     end)
     
     return obj
+end
+
+function TextInput:handleChar(char)
+    if self.isFocused then
+        if not self.maxLength or #self.value < self.maxLength then
+            self.value = self.value .. char
+            self.cursorPos = #self.value
+            gui.requestRedraw()
+            return true
+        end
+    end
+    return false
+end
+
+function TextInput:handleKey(key)
+    if self.isFocused then
+        if key == keys.backspace then
+            if #self.value > 0 then
+                self.value = self.value:sub(1, -2)
+                self.cursorPos = #self.value
+                gui.requestRedraw()
+            end
+            return true
+        elseif key == keys.delete then
+            self.value = ""
+            self.cursorPos = 0
+            gui.requestRedraw()
+            return true
+        end
+    end
+    return false
 end
 
 function TextInput:draw()
@@ -290,19 +307,31 @@ function TextInput:draw()
     
     local absX, absY = self:getAbsolutePosition()
     
-    -- Draw background
+    -- Draw background first
     gui.screen.term.setCursorPos(absX, absY)
     gui.screen.term.setBackgroundColor(self.bgColor)
-    gui.screen.term.setTextColor(self.fgColor)
+    gui.screen.term.write(string.rep(" ", self.width))
     
+    -- Determine display text
     local displayText = self.value
-    if #displayText == 0 and #self.placeholder > 0 then
-        gui.screen.term.setTextColor(gui.getColor("disabled"))
+    local isPlaceholder = false
+    
+    if #displayText == 0 and #self.placeholder > 0 and not self.isFocused then
         displayText = self.placeholder
+        isPlaceholder = true
     end
     
+    -- Truncate to fit
     displayText = gui.truncateText(displayText, self.width - 2)
-    gui.screen.term.write(" " .. displayText .. string.rep(" ", self.width - #displayText - 1))
+    
+    -- Draw text
+    gui.screen.term.setCursorPos(absX + 1, absY)
+    if isPlaceholder then
+        gui.screen.term.setTextColor(gui.getColor("disabled"))
+    else
+        gui.screen.term.setTextColor(self.fgColor)
+    end
+    gui.screen.term.write(displayText)
     
     -- Draw border
     local borderColor = self.isFocused and self.focusBorderColor or self.borderColor
@@ -316,7 +345,8 @@ function TextInput:draw()
     
     -- Draw cursor if focused
     if self.isFocused then
-        gui.screen.term.setCursorPos(absX + 1 + #self.value, absY)
+        local cursorX = absX + 1 + math.min(#self.value, self.width - 3)
+        gui.screen.term.setCursorPos(cursorX, absY)
         gui.screen.term.setCursorBlink(true)
     else
         gui.screen.term.setCursorBlink(false)

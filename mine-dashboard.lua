@@ -158,13 +158,13 @@ function dashboard.createProjectScreen()
     local nameInput = components.createTextInput("name", 5, 6, screenW - 11, "Enter project name...")
     
     -- Tunnel Length Input
-    local lengthLbl = components.createLabel("lengthlbl", 5, 8, "Tunnel Length:")
-    local lengthInput = components.createTextInput("length", 5, 9, 15, "32")
+    local lengthLbl = components.createLabel("lengthlbl", 5, 8, "Length:")
+    local lengthInput = components.createTextInput("length", 14, 8, 8, "32")
     lengthInput.value = "32"
     
-    -- Tunnel Spacing Input
-    local spacingLbl = components.createLabel("spacinglbl", 25, 8, "Spacing:")
-    local spacingInput = components.createTextInput("spacing", 25, 9, 10, "4")
+    -- Tunnel Spacing Input  
+    local spacingLbl = components.createLabel("spacinglbl", 25, 8, "Gap:")
+    local spacingInput = components.createTextInput("spacing", 30, 8, 8, "4")
     spacingInput.value = "4"
     
     -- Options
