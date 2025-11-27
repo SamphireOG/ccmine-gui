@@ -100,8 +100,6 @@ function components.createPanel(id, x, y, width, height, title)
     
     -- Add scroll handling
     panel:on("scroll", function(self, x, y, direction)
-        gui.notify("Panel scroll handler called!", colors.white, colors.orange, 1)
-        
         if self.scrollable then
             -- Calculate content height based on children
             local maxY = 0
@@ -120,14 +118,9 @@ function components.createPanel(id, x, y, width, height, title)
             -- Calculate max scroll offset
             local maxScroll = math.max(0, contentHeight - visibleHeight)
             
-            gui.notify("Max: " .. maxScroll .. " Content: " .. contentHeight, colors.white, colors.cyan, 1)
-            
             -- Update scroll offset (+ direction for natural scrolling)
-            local oldOffset = self.scrollOffset
             self.scrollOffset = self.scrollOffset + direction
             self.scrollOffset = math.max(0, math.min(self.scrollOffset, maxScroll))
-            
-            gui.notify("Offset: " .. oldOffset .. " -> " .. self.scrollOffset, colors.white, colors.yellow, 1)
             
             gui.requestRedraw()
         end
