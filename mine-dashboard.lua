@@ -157,18 +157,13 @@ function dashboard.createProjectScreen()
     local nameLbl = components.createLabel("namelbl", 5, 5, "Project Name:")
     local nameInput = components.createTextInput("name", 5, 6, screenW - 11, "Enter project name...")
     
-    -- Tunnel Length Input (constrain to panel width)
-    local maxWidth = screenW - 12  -- Account for panel borders and margins
-    
+    -- Tunnel Length and Spacing on same line (compact layout)
     local lengthLbl = components.createLabel("lengthlbl", 5, 8, "Length:")
-    lengthLbl.width = 7
-    local lengthInput = components.createTextInput("length", 13, 8, 8, "32")
+    local lengthInput = components.createTextInput("length", 13, 8, 6, "32")
     lengthInput.value = "32"
     
-    -- Tunnel Spacing Input on same line
-    local spacingLbl = components.createLabel("spacinglbl", 23, 8, "Gap:")
-    spacingLbl.width = 4
-    local spacingInput = components.createTextInput("spacing", 28, 8, 6, "4")
+    local spacingLbl = components.createLabel("spacinglbl", 21, 8, "Gap:")
+    local spacingInput = components.createTextInput("spacing", 26, 8, 5, "4")
     spacingInput.value = "4"
     
     -- Options
