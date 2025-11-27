@@ -116,28 +116,41 @@ function dashboard.createProjectScreen()
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
     
-    -- Scrollable Form Panel
-    local panel = components.createPanel("form", 3, 3, screenW - 5, screenH - 6, "Project Details")
+    -- Form Panel (larger to fit all fields)
+    local panelH = screenH - 6
+    local panel = components.createPanel("form", 3, 3, screenW - 5, panelH, "Project Details")
     panel.borderColor = gui.getColor("border")
-    panel.scrollable = true
     
-    -- Auto-layout form
-    local form = layouts.createFormLayout("projectForm", 5, 5, screenW - 11)
+    -- Form fields (start at y=5, inside panel)
+    local formY = 5
+    local inputW = 12
     
-    local nameInput = form:addField("Project Name:", "Enter name...", screenW - 11, "")
-    local mainTunnelInput = form:addField("Main Tunnel L:", "64", 12, "64")
-    local sideTunnelInput = form:addField("Side Tunnel L:", "32", 12, "32")
-    local startYInput = form:addField("Starting Y:", "11", 12, "11")
-    local endYInput = form:addField("Ending Y:", "64", 12, "64")
+    local nameLbl = components.createLabel("namelbl", 5, formY, "Project Name:")
+    local nameInput = components.createTextInput("name", 5, formY + 1, screenW - 11, "Enter name...")
     
-    -- Options (positioned right after form fields)
-    local optionsY = 5 + form.height
-    local torchCheck = components.createCheckbox("torches", 5, optionsY, "Place torches", true)
-    local wallCheck = components.createCheckbox("walls", 5, optionsY + 1, "Wall protection", true)
+    local mainLbl = components.createLabel("mainlbl", 5, formY + 3, "Main Tunnel L:")
+    local mainTunnelInput = components.createTextInput("main", 5, formY + 4, inputW, "64")
+    mainTunnelInput.value = "64"
     
-    -- Buttons
+    local sideLbl = components.createLabel("sidelbl", 5, formY + 6, "Side Tunnel L:")
+    local sideTunnelInput = components.createTextInput("side", 5, formY + 7, inputW, "32")
+    sideTunnelInput.value = "32"
+    
+    local startLbl = components.createLabel("startlbl", 5, formY + 9, "Starting Y:")
+    local startYInput = components.createTextInput("starty", 5, formY + 10, inputW, "11")
+    startYInput.value = "11"
+    
+    local endLbl = components.createLabel("endlbl", 5, formY + 12, "Ending Y:")
+    local endYInput = components.createTextInput("endy", 5, formY + 13, inputW, "64")
+    endYInput.value = "64"
+    
+    -- Options
+    local torchCheck = components.createCheckbox("torches", 5, formY + 15, "Place torches", true)
+    local wallCheck = components.createCheckbox("walls", 5, formY + 16, "Wall protection", true)
+    
+    -- Buttons (at absolute bottom of screen, outside panel)
     local btnW = math.floor((screenW - 10) / 2)
-    local createBtn = components.createButton("create", 3, screenH - 3, btnW, 2, "Create", function()
+    local createBtn = components.createButton("create", 3, screenH - 2, btnW, 2, "Create", function()
         local name = nameInput.value
         
         if not name or #name == 0 then
@@ -173,7 +186,7 @@ function dashboard.createProjectScreen()
     end)
     createBtn.bgColor = gui.getColor("success")
     
-    local cancelBtn = components.createButton("cancel", screenW - btnW - 2, screenH - 3, btnW, 2, "Cancel", function()
+    local cancelBtn = components.createButton("cancel", screenW - btnW - 2, screenH - 2, btnW, 2, "Cancel", function()
         gui.setScreen(dashboard.mainScreen)
     end)
 end
