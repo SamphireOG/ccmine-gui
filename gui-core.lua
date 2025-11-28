@@ -267,10 +267,17 @@ function gui.clearComponents()
             component.events = {}
         end
         if component.children then
+            for _, child in ipairs(component.children) do
+                child.parent = nil
+            end
             component.children = {}
+        end
+        if component.parent then
+            component.parent = nil
         end
     end
     
+    -- Completely reset components table (create new empty table)
     gui.state.components = {}
     gui.state.focusedComponent = nil
     gui.state.hoveredComponent = nil
@@ -500,7 +507,8 @@ end
 -- ========== SCREEN MANAGEMENT ==========
 
 function gui.setScreen(screenFunction)
-    -- Clear old screen
+    -- Clear old screen completely
+    gui.clear()
     gui.clearComponents()
     
     -- Set new screen
@@ -511,7 +519,7 @@ function gui.setScreen(screenFunction)
         screenFunction()
     end
     
-    -- Clear screen right before drawing to remove any stale visuals
+    -- Clear screen again right before drawing
     gui.clear()
     gui.requestRedraw()
     gui.draw()
