@@ -68,26 +68,22 @@ function Panel:draw()
     -- Move cursor to safe position (bottom-right of panel)
     gui.screen.term.setCursorPos(absX + self.width - 1, absY + self.height - 1)
     
-    -- Draw children with scroll offset
+    -- Draw children (scroll offset is handled in getAbsolutePosition)
     for _, child in ipairs(self.children) do
-        local originalY = child.y
-        
-        -- Apply scroll offset temporarily
-        if self.scrollable then
-            child.y = originalY - self.scrollOffset
-        end
-        
         -- Calculate viewport boundaries (accounting for border and title)
         local viewportTop = contentStartY + (self.borderColor and 1 or 0)
         local viewportBottom = self.height - (self.borderColor and 1 or 0)
         
-        -- Only draw if visible in panel viewport
-        if child.y + child.height > viewportTop and child.y < viewportBottom then
-            child:draw()
+        -- Calculate child's scrolled position for visibility check
+        local childScrolledY = child.y
+        if self.scrollable then
+            childScrolledY = child.y - self.scrollOffset
         end
         
-        -- Restore original position
-        child.y = originalY
+        -- Only draw if visible in panel viewport
+        if childScrolledY + child.height > viewportTop and childScrolledY < viewportBottom then
+            child:draw()
+        end
     end
 end
 
