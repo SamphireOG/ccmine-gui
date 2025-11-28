@@ -235,7 +235,7 @@ function dashboard.createProjectScreen()
     end)
 end
 
--- ========== PROJECT DETAIL SCREEN ==========
+-- ========== PROJECT CONTROL SCREEN ==========
 
 function dashboard.openProject(projectName)
     local project = loadProject(projectName)
@@ -246,37 +246,169 @@ function dashboard.openProject(projectName)
         return
     end
     
-    -- Title
-    gui.centerText(projectName, 1, gui.getColor("primary"), colors.white)
+    -- Initialize turtles list if not exists
+    if not project.turtles then
+        project.turtles = {}
+    end
     
-    -- Project Info Panel (taller to fit all fields)
-    local panel = components.createPanel("info", 3, 3, screenW - 5, 12, "Project Info")
+    -- Title bar
+    gui.screen.term.setBackgroundColor(gui.getColor("primary"))
+    gui.screen.term.setTextColor(colors.white)
+    gui.screen.term.setCursorPos(1, 1)
+    gui.screen.term.clearLine()
+    gui.centerText(projectName, 1)
+    
+    -- Settings button (top-right)
+    local settingsBtn = components.createButton("settings", screenW - 12, 3, 11, 1, "Settings", function()
+        dashboard.openProjectSettings(projectName, project)
+    end)
+    
+    -- Link Turtle button
+    local linkBtn = components.createButton("link", 2, 3, 12, 1, "Link Turtle", function()
+        dashboard.linkTurtleDialog(projectName, project)
+    end)
+    linkBtn.bgColor = gui.getColor("success")
+    
+    -- Scrollable Turtle List Panel
+    local panelH = screenH - 6
+    local panel = components.createPanel("turtles", 2, 5, screenW - 4, panelH, "Linked Turtles")
     panel.borderColor = gui.getColor("border")
+    panel.scrollable = true
     
-    -- Display project details
-    local mainLbl = components.createLabel("main", 5, 5, "Main Tunnel: " .. (project.mainTunnelLength or 64))
-    local sideLbl = components.createLabel("side", 5, 6, "Side Tunnel: " .. (project.sideTunnelLength or 32))
-    local startLbl = components.createLabel("start", 5, 7, "Start Y: " .. (project.startY or 11))
-    local endLbl = components.createLabel("end", 5, 8, "End Y: " .. (project.endY or 64))
-    local channelLbl = components.createLabel("channel", 5, 9, "Channel: " .. (project.channel or 101))
-    local torchLbl = components.createLabel("torch", 5, 10, "Torches: " .. (project.placeTorches and "Yes" or "No"))
-    local wallLbl = components.createLabel("wall", 5, 11, "Wall Protect: " .. (project.wallProtection and "Yes" or "No"))
+    -- Display linked turtles
+    if #project.turtles == 0 then
+        local noTurtlesLbl = components.createLabel("noturtles", 2, 2, "No turtles linked yet")
+        noTurtlesLbl.parent = panel
+        noTurtlesLbl.fgColor = gui.getColor("disabled")
+        noTurtlesLbl.zIndex = 10
+        panel:addChild(noTurtlesLbl)
+        
+        local hintLbl = components.createLabel("hint", 2, 3, "Press 'Link Turtle' above")
+        hintLbl.parent = panel
+        hintLbl.fgColor = gui.getColor("disabled")
+        hintLbl.zIndex = 10
+        panel:addChild(hintLbl)
+    else
+        -- Display each turtle with its info
+        local formY = 2
+        for i, turtle in ipairs(project.turtles) do
+            local turtleY = formY + ((i - 1) * 5)  -- 5 lines per turtle
+            
+            -- Turtle ID/Name
+            local nameLbl = components.createLabel("turtle_name_" .. i, 2, turtleY, "ID: " .. (turtle.id or "???"))
+            nameLbl.parent = panel
+            nameLbl.fgColor = gui.getColor("primary")
+            nameLbl.zIndex = 10
+            panel:addChild(nameLbl)
+            
+            -- Status
+            local statusColor = turtle.status == "active" and gui.getColor("success") or gui.getColor("disabled")
+            local statusLbl = components.createLabel("turtle_status_" .. i, 2, turtleY + 1, "Status: " .. (turtle.status or "idle"))
+            statusLbl.parent = panel
+            statusLbl.fgColor = statusColor
+            statusLbl.zIndex = 10
+            panel:addChild(statusLbl)
+            
+            -- Fuel
+            local fuelLbl = components.createLabel("turtle_fuel_" .. i, 2, turtleY + 2, "Fuel: " .. (turtle.fuel or "0"))
+            fuelLbl.parent = panel
+            fuelLbl.zIndex = 10
+            panel:addChild(fuelLbl)
+            
+            -- Position
+            local posLbl = components.createLabel("turtle_pos_" .. i, 2, turtleY + 3, "Pos: " .. (turtle.x or "?") .. "," .. (turtle.y or "?") .. "," .. (turtle.z or "?"))
+            posLbl.parent = panel
+            posLbl.zIndex = 10
+            panel:addChild(posLbl)
+            
+            -- Unlink button
+            local unlinkBtn = components.createButton("unlink_" .. i, screenW - 12, turtleY, 8, 1, "Unlink", function()
+                dashboard.unlinkTurtle(projectName, project, i)
+            end)
+            unlinkBtn.parent = panel
+            unlinkBtn.bgColor = gui.getColor("error")
+            unlinkBtn.zIndex = 10
+            panel:addChild(unlinkBtn)
+        end
+    end
     
-    -- Action Buttons
-    local startBtn = components.createButton("start", 3, 16, screenW - 5, 3, "Start Mining", function()
-        gui.notify("Mining system not yet implemented", colors.black, colors.yellow, 3)
-        -- TODO: Launch mining coordinator
-    end)
-    startBtn.bgColor = gui.getColor("success")
-    
-    local editBtn = components.createButton("edit", 3, screenH - 5, 15, 2, "Edit", function()
-        gui.notify("Edit not yet implemented", colors.black, colors.yellow, 2)
-        -- TODO: Edit project screen
-    end)
-    
-    local backBtn = components.createButton("back", screenW - 17, screenH - 5, 15, 2, "Back", function()
+    -- Back button (bottom)
+    local backBtn = components.createButton("back", 2, screenH - 1, 10, 1, "Back", function()
         gui.setScreen(dashboard.mainScreen)
     end)
+end
+
+-- ========== PROJECT SETTINGS SCREEN ==========
+
+function dashboard.openProjectSettings(projectName, project)
+    gui.notify("Project settings coming soon!", colors.white, colors.orange, 2)
+    -- TODO: Create settings screen with editable project parameters
+    gui.setScreen(function() dashboard.openProject(projectName) end)
+end
+
+-- ========== LINK TURTLE DIALOG ==========
+
+function dashboard.linkTurtleDialog(projectName, project)
+    dialogs.prompt(
+        "Link Turtle",
+        "Enter Turtle ID:",
+        "",
+        function(turtleId)
+            -- Confirm callback
+            if turtleId and #turtleId > 0 then
+                -- Add turtle to project
+                table.insert(project.turtles, {
+                    id = turtleId,
+                    status = "idle",
+                    fuel = 0,
+                    x = 0,
+                    y = 0,
+                    z = 0,
+                    linkedAt = os.epoch("utc")
+                })
+                
+                if saveProject(projectName, project) then
+                    gui.notify("Turtle " .. turtleId .. " linked!", colors.white, colors.green, 2)
+                    gui.setScreen(function() dashboard.openProject(projectName) end)
+                else
+                    gui.notify("Failed to save project!", colors.white, colors.red, 3)
+                end
+            else
+                gui.notify("Invalid Turtle ID", colors.white, colors.red, 2)
+                gui.setScreen(function() dashboard.openProject(projectName) end)
+            end
+        end,
+        function()
+            -- Cancel callback
+            gui.setScreen(function() dashboard.openProject(projectName) end)
+        end
+    )
+end
+
+-- ========== UNLINK TURTLE ==========
+
+function dashboard.unlinkTurtle(projectName, project, turtleIndex)
+    local turtle = project.turtles[turtleIndex]
+    if not turtle then return end
+    
+    dialogs.confirm(
+        "Unlink Turtle",
+        "Unlink turtle '" .. turtle.id .. "'?",
+        function()
+            -- Yes callback
+            table.remove(project.turtles, turtleIndex)
+            if saveProject(projectName, project) then
+                gui.notify("Turtle unlinked", colors.white, colors.orange, 2)
+                gui.setScreen(function() dashboard.openProject(projectName) end)
+            else
+                gui.notify("Failed to save!", colors.white, colors.red, 3)
+            end
+        end,
+        function()
+            -- No callback
+            gui.setScreen(function() dashboard.openProject(projectName) end)
+        end
+    )
 end
 
 -- ========== DELETE CONFIRMATION (using framework dialog) ==========
