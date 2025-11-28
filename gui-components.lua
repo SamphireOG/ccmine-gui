@@ -100,7 +100,8 @@ function Panel:draw()
         
         -- Only draw scrollbar if there's something to scroll
         if contentHeight > visibleHeight then
-            local scrollbarX = absX + self.width - 2  -- Inside right border
+            -- Position scrollbar on the right side, inside the border
+            local scrollbarX = absX + self.width - (self.borderColor and 2 or 1)
             local scrollbarTop = absY + contentStartY + (self.borderColor and 1 or 0)
             local scrollbarHeight = visibleHeight
             
