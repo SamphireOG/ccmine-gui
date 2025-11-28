@@ -40,15 +40,15 @@ function dashboard.mainScreen()
     gui.screen.term.clearLine()
     gui.centerText("Mine Dashboard", 1)
     
-    -- Create Project button
-    local createBtn = components.createButton("create", 2, 3, 15, 3, "Create +", function()
+    -- Create Project button (smaller and more compact)
+    local createBtn = components.createButton("create", 2, 3, 12, 2, "Create +", function()
         gui.setScreen(dashboard.createProjectScreen)
     end)
     createBtn.bgColor = gui.getColor("success")
     
     -- Project List Panel
-    local panelH = screenH - 7
-    local panel = components.createPanel("projects", 2, 7, screenW - 4, panelH, "Projects")
+    local panelH = screenH - 6
+    local panel = components.createPanel("projects", 2, 6, screenW - 4, panelH, "Projects")
     panel.borderColor = gui.getColor("border")
     
     -- Load and display projects
@@ -58,40 +58,40 @@ function dashboard.mainScreen()
         -- No projects message (constrain to panel width)
         local maxLabelWidth = screenW - 10  -- Account for margins and border
         
-        local noProjectsLbl = components.createLabel("noprojects", 4, 9, "No projects yet.")
+        local noProjectsLbl = components.createLabel("noprojects", 4, 8, "No projects yet.")
         noProjectsLbl.width = maxLabelWidth
         noProjectsLbl.fgColor = gui.getColor("disabled")
         
-        local hintLbl = components.createLabel("hint", 4, 10, "Press 'Create +' above")
+        local hintLbl = components.createLabel("hint", 4, 9, "Press 'Create +' above")
         hintLbl.width = maxLabelWidth
         hintLbl.fgColor = gui.getColor("disabled")
     else
-        -- Display projects as list items with delete buttons
-        local startY = 9
+        -- Display projects as list items with delete buttons (more compact)
+        local startY = 8
         for i, projectName in ipairs(projects) do
-            local itemY = startY + ((i - 1) * 2)
+            local itemY = startY + ((i - 1) * 1)  -- Single line spacing
             
-            if itemY + 1 < screenH - 2 then  -- Check if it fits on screen
-                -- Project name button (opens project)
+            if itemY < screenH - 2 then  -- Check if it fits on screen
+                -- Project name button (opens project) - height 1
                 local projectBtn = components.createButton(
                     "proj_" .. i,
                     4,
                     itemY,
-                    screenW - 12,
-                    2,
+                    screenW - 11,
+                    1,
                     projectName,
                     function()
                         dashboard.openProject(projectName)
                     end
                 )
                 
-                -- Delete button (X)
+                -- Delete button (X) - height 1, width 3
                 local deleteBtn = components.createButton(
                     "del_" .. i,
-                    screenW - 7,
+                    screenW - 6,
                     itemY,
-                    4,
-                    2,
+                    3,
+                    1,
                     "X",
                     function()
                         dashboard.confirmDelete(projectName)
