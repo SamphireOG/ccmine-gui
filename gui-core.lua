@@ -261,42 +261,16 @@ function gui.removeComponent(id)
 end
 
 function gui.clearComponents()
-    -- Get list of all component IDs first
-    local componentIds = {}
-    for id in pairs(gui.state.components) do
-        table.insert(componentIds, id)
-    end
-    
-    -- Destroy each component thoroughly
-    for _, id in ipairs(componentIds) do
-        local component = gui.state.components[id]
-        if component then
-            -- Clear all references
-            if component.events then
-                for eventName in pairs(component.events) do
-                    component.events[eventName] = nil
-                end
-                component.events = nil
-            end
-            if component.children then
-                for i = #component.children, 1, -1 do
-                    component.children[i].parent = nil
-                    component.children[i] = nil
-                end
-                component.children = nil
-            end
-            if component.callback then
-                component.callback = nil
-            end
-            if component.parent then
-                component.parent = nil
-            end
-            -- Remove from registry
-            gui.state.components[id] = nil
+    -- Properly destroy all components first
+    for id, component in pairs(gui.state.components) do
+        if component.events then
+            component.events = {}
+        end
+        if component.children then
+            component.children = {}
         end
     end
     
-    -- Create completely new empty table
     gui.state.components = {}
     gui.state.focusedComponent = nil
     gui.state.hoveredComponent = nil
@@ -313,29 +287,10 @@ function gui.init()
 end
 
 function gui.clear()
-    -- Try to get native terminal for absolute clearing
-    local t = term.native and term.native() or gui.screen.term
-    
-    t.setBackgroundColor(gui.getColor("background"))
-    t.setTextColor(gui.getColor("foreground"))
-    t.clear()
-    t.setCursorPos(1, 1)
-    
-    -- Force clear by writing spaces over entire screen
-    local w, h = t.getSize()
-    for y = 1, h do
-        t.setCursorPos(1, y)
-        t.write(string.rep(" ", w))
-    end
-    
-    t.setCursorPos(1, 1)
-    
-    -- Also clear our screen reference
     gui.screen.term.setBackgroundColor(gui.getColor("background"))
     gui.screen.term.setTextColor(gui.getColor("foreground"))
     gui.screen.term.clear()
     gui.screen.term.setCursorPos(1, 1)
-    
     gui.requestRedraw()
 end
 
@@ -545,58 +500,19 @@ end
 -- ========== SCREEN MANAGEMENT ==========
 
 function gui.setScreen(screenFunction)
-    -- ULTRA AGGRESSIVE CLEAR - Clear panel children first!
-    for _, component in pairs(gui.state.components) do
-        if component.type == "panel" and component.children then
-            -- Clear all children references
-            for i = #component.children, 1, -1 do
-                component.children[i] = nil
-            end
-            component.children = {}
-        end
-    end
-    
-    -- Nuclear clear - wipe everything immediately
-    gui.state.components = {}
-    gui.state.focusedComponent = nil
-    gui.state.hoveredComponent = nil
-    gui.state.needsRedraw = false
-    
-    -- Force clear the screen buffer completely
+    -- Clear old screen
+    gui.clearComponents()
     gui.clear()
-    sleep(0.05)  -- Small delay to let terminal buffer flush
-    gui.clear()  -- Clear again after delay
     
     -- Set new screen
     gui.state.currentScreen = screenFunction
     
-    -- Build new screen (creates components)
+    -- Draw new screen
     if screenFunction then
         screenFunction()
     end
     
-    -- Count components after screen creation
-    local count = 0
-    local panelCount = 0
-    local childCount = 0
-    for _, comp in pairs(gui.state.components) do
-        count = count + 1
-        if comp.type == "panel" then
-            panelCount = panelCount + 1
-            if comp.children then
-                childCount = childCount + #comp.children
-            end
-        end
-    end
-    
-    -- Final clear before drawing
-    gui.clear()
-    
-    -- Draw notification with component count for debugging
-    gui.notify("C:" .. count .. " P:" .. panelCount .. " Ch:" .. childCount, colors.white, colors.blue, 1)
-    
-    -- Now draw only the new components
-    gui.state.needsRedraw = true
+    gui.requestRedraw()
     gui.draw()
 end
 

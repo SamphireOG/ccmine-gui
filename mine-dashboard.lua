@@ -33,6 +33,9 @@ end
 -- ========== MAIN DASHBOARD SCREEN ==========
 
 function dashboard.mainScreen()
+    -- Clear entire screen first
+    gui.clear()
+    
     -- Title bar
     gui.screen.term.setBackgroundColor(gui.getColor("primary"))
     gui.screen.term.setTextColor(colors.white)
@@ -113,6 +116,9 @@ end
 -- ========== CREATE PROJECT SCREEN ==========
 
 function dashboard.createProjectScreen()
+    -- Clear screen first
+    gui.clear()
+    
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
     
@@ -250,6 +256,9 @@ function dashboard.openProject(projectName)
     if not project.turtles then
         project.turtles = {}
     end
+    
+    -- Clear entire screen first
+    gui.clear()
     
     -- Title bar
     gui.screen.term.setBackgroundColor(gui.getColor("primary"))
