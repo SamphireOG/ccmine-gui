@@ -70,16 +70,20 @@ function Panel:draw()
     
     -- Draw children (scroll offset is handled in getAbsolutePosition)
     for _, child in ipairs(self.children) do
-        -- Get child's absolute screen position (includes scroll offset)
-        local childAbsX, childAbsY = child:getAbsolutePosition()
-        
-        -- Calculate viewport boundaries in screen coordinates
-        local viewportTop = absY + contentStartY + (self.borderColor and 1 or 0)
-        local viewportBottom = absY + self.height - (self.borderColor and 1 or 0)
-        
-        -- Only draw if visible in panel viewport (check screen coordinates)
-        if childAbsY + child.height > viewportTop and childAbsY < viewportBottom then
-            child:draw()
+        -- CRITICAL: Only draw children that are still in the component registry
+        -- This prevents old children from being drawn after screen transitions
+        if gui.state.components[child.id] then
+            -- Get child's absolute screen position (includes scroll offset)
+            local childAbsX, childAbsY = child:getAbsolutePosition()
+            
+            -- Calculate viewport boundaries in screen coordinates
+            local viewportTop = absY + contentStartY + (self.borderColor and 1 or 0)
+            local viewportBottom = absY + self.height - (self.borderColor and 1 or 0)
+            
+            -- Only draw if visible in panel viewport (check screen coordinates)
+            if childAbsY + child.height > viewportTop and childAbsY < viewportBottom then
+                child:draw()
+            end
         end
     end
     
