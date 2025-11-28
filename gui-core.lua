@@ -317,6 +317,15 @@ function gui.clear()
     gui.screen.term.setTextColor(gui.getColor("foreground"))
     gui.screen.term.clear()
     gui.screen.term.setCursorPos(1, 1)
+    
+    -- Force clear by writing spaces over entire screen
+    local w, h = gui.screen.term.getSize()
+    for y = 1, h do
+        gui.screen.term.setCursorPos(1, y)
+        gui.screen.term.write(string.rep(" ", w))
+    end
+    
+    gui.screen.term.setCursorPos(1, 1)
     gui.requestRedraw()
 end
 
@@ -526,24 +535,29 @@ end
 -- ========== SCREEN MANAGEMENT ==========
 
 function gui.setScreen(screenFunction)
-    -- Aggressively clear everything
-    gui.state.components = {}  -- Clear components table first
+    -- Nuclear clear - wipe everything immediately
+    gui.state.components = {}
     gui.state.focusedComponent = nil
     gui.state.hoveredComponent = nil
-    gui.clear()  -- Clear screen
-    gui.clearComponents()  -- Thorough component cleanup
+    gui.state.needsRedraw = false
+    
+    -- Force clear the screen buffer completely
+    gui.clear()
+    gui.clear()  -- Double clear to ensure buffer is flushed
     
     -- Set new screen
     gui.state.currentScreen = screenFunction
     
-    -- Build new screen (creates components)
+    -- Build new screen (creates components but doesn't draw yet)
     if screenFunction then
         screenFunction()
     end
     
-    -- Clear screen again right before drawing
+    -- One final clear before drawing new components
     gui.clear()
-    gui.requestRedraw()
+    
+    -- Now draw only the new components
+    gui.state.needsRedraw = true
     gui.draw()
 end
 
