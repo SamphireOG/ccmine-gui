@@ -545,6 +545,17 @@ end
 -- ========== SCREEN MANAGEMENT ==========
 
 function gui.setScreen(screenFunction)
+    -- ULTRA AGGRESSIVE CLEAR - Clear panel children first!
+    for _, component in pairs(gui.state.components) do
+        if component.type == "panel" and component.children then
+            -- Clear all children references
+            for i = #component.children, 1, -1 do
+                component.children[i] = nil
+            end
+            component.children = {}
+        end
+    end
+    
     -- Nuclear clear - wipe everything immediately
     gui.state.components = {}
     gui.state.focusedComponent = nil
@@ -566,13 +577,23 @@ function gui.setScreen(screenFunction)
     
     -- Count components after screen creation
     local count = 0
-    for _ in pairs(gui.state.components) do count = count + 1 end
+    local panelCount = 0
+    local childCount = 0
+    for _, comp in pairs(gui.state.components) do
+        count = count + 1
+        if comp.type == "panel" then
+            panelCount = panelCount + 1
+            if comp.children then
+                childCount = childCount + #comp.children
+            end
+        end
+    end
     
     -- Final clear before drawing
     gui.clear()
     
     -- Draw notification with component count for debugging
-    gui.notify("Loading: " .. count .. " components", colors.white, colors.blue, 1)
+    gui.notify("C:" .. count .. " P:" .. panelCount .. " Ch:" .. childCount, colors.white, colors.blue, 1)
     
     -- Now draw only the new components
     gui.state.needsRedraw = true
