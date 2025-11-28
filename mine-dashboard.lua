@@ -129,55 +129,67 @@ function dashboard.createProjectScreen()
     
     local nameLbl = components.createLabel("namelbl", formX, formY, "Project Name:")
     nameLbl.parent = panel
+    nameLbl.zIndex = 10
     panel:addChild(nameLbl)
     
     local nameInput = components.createTextInput("name", formX, formY + 1, screenW - 11, "Enter name...")
     nameInput.parent = panel
+    nameInput.zIndex = 10
     panel:addChild(nameInput)
     
     local mainLbl = components.createLabel("mainlbl", formX, formY + 3, "Main Tunnel L:")
     mainLbl.parent = panel
+    mainLbl.zIndex = 10
     panel:addChild(mainLbl)
     
     local mainTunnelInput = components.createTextInput("main", formX, formY + 4, inputW, "64")
     mainTunnelInput.value = "64"
     mainTunnelInput.parent = panel
+    mainTunnelInput.zIndex = 10
     panel:addChild(mainTunnelInput)
     
     local sideLbl = components.createLabel("sidelbl", formX, formY + 6, "Side Tunnel L:")
     sideLbl.parent = panel
+    sideLbl.zIndex = 10
     panel:addChild(sideLbl)
     
     local sideTunnelInput = components.createTextInput("side", formX, formY + 7, inputW, "32")
     sideTunnelInput.value = "32"
     sideTunnelInput.parent = panel
+    sideTunnelInput.zIndex = 10
     panel:addChild(sideTunnelInput)
     
     local startLbl = components.createLabel("startlbl", formX, formY + 9, "Starting Y:")
     startLbl.parent = panel
+    startLbl.zIndex = 10
     panel:addChild(startLbl)
     
     local startYInput = components.createTextInput("starty", formX, formY + 10, inputW, "11")
     startYInput.value = "11"
     startYInput.parent = panel
+    startYInput.zIndex = 10
     panel:addChild(startYInput)
     
     local endLbl = components.createLabel("endlbl", formX, formY + 12, "Ending Y:")
     endLbl.parent = panel
+    endLbl.zIndex = 10
     panel:addChild(endLbl)
     
     local endYInput = components.createTextInput("endy", formX, formY + 13, inputW, "64")
     endYInput.value = "64"
     endYInput.parent = panel
+    endYInput.zIndex = 10
     panel:addChild(endYInput)
     
     -- Options
     local torchCheck = components.createCheckbox("torches", formX, formY + 15, "Place torches", true)
     torchCheck.parent = panel
+    torchCheck.zIndex = 10
     panel:addChild(torchCheck)
     
     local wallCheck = components.createCheckbox("walls", formX, formY + 16, "Wall protection", true)
     wallCheck.parent = panel
+    wallCheck.zIndex = 10
     panel:addChild(wallCheck)
     
     -- Buttons (at absolute bottom of screen, outside panel)

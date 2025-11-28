@@ -82,6 +82,48 @@ function Panel:draw()
             child:draw()
         end
     end
+    
+    -- Draw scrollbar if scrollable and content exceeds viewport
+    if self.scrollable then
+        -- Calculate content height
+        local maxY = 0
+        for _, child in ipairs(self.children) do
+            local childBottom = child.y + child.height
+            if childBottom > maxY then
+                maxY = childBottom
+            end
+        end
+        
+        local contentStartY = self.title and 1 or 0
+        local visibleHeight = self.height - contentStartY - (self.borderColor and 2 or 0)
+        local contentHeight = maxY
+        
+        -- Only draw scrollbar if there's something to scroll
+        if contentHeight > visibleHeight then
+            local scrollbarX = absX + self.width - 2  -- Inside right border
+            local scrollbarTop = absY + contentStartY + (self.borderColor and 1 or 0)
+            local scrollbarHeight = visibleHeight
+            
+            -- Draw scrollbar track
+            gui.screen.term.setBackgroundColor(gui.getColor("secondary"))
+            for dy = 0, scrollbarHeight - 1 do
+                gui.screen.term.setCursorPos(scrollbarX, scrollbarTop + dy)
+                gui.screen.term.write(" ")
+            end
+            
+            -- Calculate thumb position and size
+            local thumbHeight = math.max(1, math.floor((visibleHeight / contentHeight) * scrollbarHeight))
+            local maxScroll = contentHeight - visibleHeight
+            local thumbPos = math.floor((self.scrollOffset / maxScroll) * (scrollbarHeight - thumbHeight))
+            
+            -- Draw scrollbar thumb
+            gui.screen.term.setBackgroundColor(gui.getColor("primary"))
+            for dy = 0, thumbHeight - 1 do
+                gui.screen.term.setCursorPos(scrollbarX, scrollbarTop + thumbPos + dy)
+                gui.screen.term.write(" ")
+            end
+        end
+    end
 end
 
 components.Panel = Panel
