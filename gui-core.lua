@@ -313,19 +313,29 @@ function gui.init()
 end
 
 function gui.clear()
+    -- Try to get native terminal for absolute clearing
+    local t = term.native and term.native() or gui.screen.term
+    
+    t.setBackgroundColor(gui.getColor("background"))
+    t.setTextColor(gui.getColor("foreground"))
+    t.clear()
+    t.setCursorPos(1, 1)
+    
+    -- Force clear by writing spaces over entire screen
+    local w, h = t.getSize()
+    for y = 1, h do
+        t.setCursorPos(1, y)
+        t.write(string.rep(" ", w))
+    end
+    
+    t.setCursorPos(1, 1)
+    
+    -- Also clear our screen reference
     gui.screen.term.setBackgroundColor(gui.getColor("background"))
     gui.screen.term.setTextColor(gui.getColor("foreground"))
     gui.screen.term.clear()
     gui.screen.term.setCursorPos(1, 1)
     
-    -- Force clear by writing spaces over entire screen
-    local w, h = gui.screen.term.getSize()
-    for y = 1, h do
-        gui.screen.term.setCursorPos(1, y)
-        gui.screen.term.write(string.rep(" ", w))
-    end
-    
-    gui.screen.term.setCursorPos(1, 1)
     gui.requestRedraw()
 end
 
@@ -543,18 +553,26 @@ function gui.setScreen(screenFunction)
     
     -- Force clear the screen buffer completely
     gui.clear()
-    gui.clear()  -- Double clear to ensure buffer is flushed
+    sleep(0.05)  -- Small delay to let terminal buffer flush
+    gui.clear()  -- Clear again after delay
     
     -- Set new screen
     gui.state.currentScreen = screenFunction
     
-    -- Build new screen (creates components but doesn't draw yet)
+    -- Build new screen (creates components)
     if screenFunction then
         screenFunction()
     end
     
-    -- One final clear before drawing new components
+    -- Count components after screen creation
+    local count = 0
+    for _ in pairs(gui.state.components) do count = count + 1 end
+    
+    -- Final clear before drawing
     gui.clear()
+    
+    -- Draw notification with component count for debugging
+    gui.notify("Loading: " .. count .. " components", colors.white, colors.blue, 1)
     
     -- Now draw only the new components
     gui.state.needsRedraw = true
