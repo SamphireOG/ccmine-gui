@@ -261,23 +261,42 @@ function gui.removeComponent(id)
 end
 
 function gui.clearComponents()
-    -- Properly destroy all components first
-    for id, component in pairs(gui.state.components) do
-        if component.events then
-            component.events = {}
-        end
-        if component.children then
-            for _, child in ipairs(component.children) do
-                child.parent = nil
+    -- Get list of all component IDs first
+    local componentIds = {}
+    for id in pairs(gui.state.components) do
+        table.insert(componentIds, id)
+    end
+    
+    -- Destroy each component thoroughly
+    for _, id in ipairs(componentIds) do
+        local component = gui.state.components[id]
+        if component then
+            -- Clear all references
+            if component.events then
+                for eventName in pairs(component.events) do
+                    component.events[eventName] = nil
+                end
+                component.events = nil
             end
-            component.children = {}
-        end
-        if component.parent then
-            component.parent = nil
+            if component.children then
+                for i = #component.children, 1, -1 do
+                    component.children[i].parent = nil
+                    component.children[i] = nil
+                end
+                component.children = nil
+            end
+            if component.callback then
+                component.callback = nil
+            end
+            if component.parent then
+                component.parent = nil
+            end
+            -- Remove from registry
+            gui.state.components[id] = nil
         end
     end
     
-    -- Completely reset components table (create new empty table)
+    -- Create completely new empty table
     gui.state.components = {}
     gui.state.focusedComponent = nil
     gui.state.hoveredComponent = nil
@@ -507,9 +526,12 @@ end
 -- ========== SCREEN MANAGEMENT ==========
 
 function gui.setScreen(screenFunction)
-    -- Clear old screen completely
-    gui.clear()
-    gui.clearComponents()
+    -- Aggressively clear everything
+    gui.state.components = {}  -- Clear components table first
+    gui.state.focusedComponent = nil
+    gui.state.hoveredComponent = nil
+    gui.clear()  -- Clear screen
+    gui.clearComponents()  -- Thorough component cleanup
     
     -- Set new screen
     gui.state.currentScreen = screenFunction
