@@ -502,16 +502,17 @@ end
 function gui.setScreen(screenFunction)
     -- Clear old screen
     gui.clearComponents()
-    gui.clear()
     
     -- Set new screen
     gui.state.currentScreen = screenFunction
     
-    -- Draw new screen
+    -- Build new screen (creates components)
     if screenFunction then
         screenFunction()
     end
     
+    -- Clear screen right before drawing to remove any stale visuals
+    gui.clear()
     gui.requestRedraw()
     gui.draw()
 end
