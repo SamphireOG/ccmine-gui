@@ -4,6 +4,7 @@
 local gui = require("gui-core")
 local components = require("gui-components")
 local layouts = require("gui-layouts")
+local client = require("turtle-client")
 
 local app = {}
 
@@ -16,12 +17,15 @@ app.state = {
     fuel = 5000,
     maxFuel = 20000,
     inventory = 0,
-    maxInventory = 16
+    maxInventory = 16,
+    networkEnabled = false,
+    networkStatus = nil
 }
 
 -- ========== SCREENS ==========
 
 function app.createMainScreen()
+    app.state.currentScreen = "main"
     gui.clearComponents()
     
     -- Create layout regions
@@ -45,6 +49,14 @@ function app.createMainScreen()
     local statusLabel = components.createLabel("statusText", 4, 7,
         app.state.mining and "Status: MINING" or "Status: IDLE")
     statusLabel.fgColor = app.state.mining and gui.getColor("success") or gui.getColor("warning")
+    
+    -- Network Status Indicator
+    if app.state.networkEnabled then
+        local netStatus = app.state.networkStatus or {}
+        local netLabel = components.createLabel("netStatus", 35, 7,
+            netStatus.connected and "[NET: ON]" or "[NET: OFF]")
+        netLabel.fgColor = netStatus.connected and gui.getColor("success") or gui.getColor("error")
+    end
     
     local posLabel = components.createLabel("position", 4, 8,
         string.format("Position: X:%d Y:%d Z:%d", 
@@ -80,17 +92,23 @@ function app.createMainScreen()
     configBtn.bgColor = gui.getColor("primary")
     
     -- Footer buttons
-    local manualBtn = components.createButton("manual", 2, regions.footer.y, 15, 2, "Manual Control",
+    local manualBtn = components.createButton("manual", 2, regions.footer.y, 11, 2, "Manual",
         function()
             app.showManualScreen()
         end)
     
-    local statsBtn = components.createButton("stats", 18, regions.footer.y, 15, 2, "Statistics",
+    local statsBtn = components.createButton("stats", 14, regions.footer.y, 11, 2, "Stats",
         function()
             app.showStatsScreen()
         end)
     
-    local exitBtn = components.createButton("exit", 34, regions.footer.y, 15, 2, "Exit",
+    local networkBtn = components.createButton("network", 26, regions.footer.y, 11, 2, "Network",
+        function()
+            app.showNetworkScreen()
+        end)
+    networkBtn.bgColor = app.state.networkEnabled and gui.getColor("primary") or colors.gray
+    
+    local exitBtn = components.createButton("exit", 38, regions.footer.y, 11, 2, "Exit",
         function()
             app.exit()
         end)
@@ -100,6 +118,7 @@ function app.createMainScreen()
 end
 
 function app.showConfigScreen()
+    app.state.currentScreen = "config"
     gui.clearComponents()
     
     -- Title
@@ -146,6 +165,7 @@ function app.showConfigScreen()
 end
 
 function app.showManualScreen()
+    app.state.currentScreen = "manual"
     gui.clearComponents()
     
     -- Title
@@ -210,6 +230,7 @@ function app.showManualScreen()
 end
 
 function app.showStatsScreen()
+    app.state.currentScreen = "stats"
     gui.clearComponents()
     
     -- Title
@@ -230,6 +251,94 @@ function app.showStatsScreen()
     
     -- Back button
     local backBtn = components.createButton("back", 15, 16, 20, 2, "Back",
+        function()
+            app.createMainScreen()
+        end)
+    
+    gui.draw()
+end
+
+function app.showNetworkScreen()
+    app.state.currentScreen = "network"
+    gui.clearComponents()
+    
+    -- Title
+    gui.centerText("Network Status", 1, gui.getColor("primary"), colors.white)
+    
+    local status = app.state.networkStatus or {}
+    
+    -- Connection Panel
+    local connPanel = components.createPanel("conn", 2, 3, 47, 7, "Connection")
+    connPanel.borderColor = gui.getColor("border")
+    
+    local connLabel = components.createLabel("connStatus", 4, 5,
+        status.connected and "Status: Connected to Coordinator" or "Status: Disconnected")
+    connLabel.fgColor = status.connected and gui.getColor("success") or gui.getColor("error")
+    
+    local idLabel = components.createLabel("id", 4, 6,
+        string.format("Turtle ID: %d", os.getComputerID()))
+    
+    local labelText = os.getComputerLabel() or "Unlabeled"
+    local labelLabel = components.createLabel("label", 4, 7,
+        string.format("Label: %s", labelText))
+    
+    if status.coordinatorId then
+        local coordLabel = components.createLabel("coord", 4, 8,
+            string.format("Coordinator: %d", status.coordinatorId))
+    end
+    
+    -- Project Panel
+    if status.currentProject then
+        local projPanel = components.createPanel("proj", 2, 11, 47, 8, "Current Project")
+        projPanel.borderColor = gui.getColor("border")
+        
+        local projName = components.createLabel("projName", 4, 13,
+            "Project: " .. (status.currentProject.name or "Unknown"))
+        
+        local projType = components.createLabel("projType", 4, 14,
+            "Type: " .. (status.currentProject.type or "Unknown"))
+        
+        if status.assignment then
+            local zoneLabel = components.createLabel("zone", 4, 15,
+                string.format("Zone: %d", status.assignment.zone or 0))
+            
+            local instrLabel = components.createLabel("instr", 4, 16,
+                status.assignment.instructions or "No instructions")
+        end
+        
+        -- Peers List
+        if status.peers and #status.peers > 0 then
+            local peerLabel = components.createLabel("peerLbl", 4, 17,
+                string.format("Other Turtles: %d", #status.peers))
+        end
+    else
+        local noProjLabel = components.createLabel("noProj", 4, 12,
+            "No project assigned")
+        noProjLabel.fgColor = colors.gray
+    end
+    
+    -- Control Buttons
+    local btnY = 17
+    if not status.currentProject then
+        btnY = 14
+    end
+    
+    if not app.state.networkEnabled then
+        local enableBtn = components.createButton("enable", 5, btnY, 18, 2, "Enable Network",
+            function()
+                app.enableNetwork()
+            end)
+        enableBtn.bgColor = gui.getColor("success")
+    else
+        local refreshBtn = components.createButton("refresh", 5, btnY, 18, 2, "Refresh Status",
+            function()
+                app.refreshNetworkStatus()
+            end)
+        refreshBtn.bgColor = gui.getColor("primary")
+    end
+    
+    -- Back button
+    local backBtn = components.createButton("back", 27, btnY, 18, 2, "Back",
         function()
             app.createMainScreen()
         end)
@@ -271,7 +380,48 @@ end
 function app.exit()
     gui.clearComponents()
     gui.clear()
+    
+    -- Close network if enabled
+    if app.state.networkEnabled then
+        client.close()
+    end
+    
     print("CCMine exited. Thank you!")
+end
+
+-- ========== NETWORK FUNCTIONS ==========
+
+function app.enableNetwork()
+    print("Enabling network...")
+    
+    local success = client.init(os.getComputerLabel())
+    
+    if success then
+        app.state.networkEnabled = true
+        app.refreshNetworkStatus()
+        print("Network enabled!")
+        
+        -- Start background service in parallel
+        -- Note: This would need proper parallel handling in production
+    else
+        print("Failed to enable network!")
+    end
+    
+    app.showNetworkScreen()
+end
+
+function app.refreshNetworkStatus()
+    if not app.state.networkEnabled then
+        return
+    end
+    
+    app.state.networkStatus = client.getStatus()
+    
+    if app.state.currentScreen == "main" then
+        app.createMainScreen()
+    elseif app.state.currentScreen == "network" then
+        app.showNetworkScreen()
+    end
 end
 
 -- ========== MAIN ==========
@@ -281,7 +431,15 @@ function app.run()
     gui.init()
     gui.setTheme("default")
     
+    -- Try to auto-enable network if modem available
+    local modem = peripheral.find("modem")
+    if modem then
+        print("Modem detected. Network available.")
+        -- Don't auto-enable, let user choose
+    end
+    
     -- Show main screen
+    app.state.currentScreen = "main"
     app.createMainScreen()
     
     -- Event loop
