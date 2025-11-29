@@ -168,9 +168,9 @@ end
 local function createStartupFile(startupType)
     -- Detect device type
     local deviceType = "computer"
-    if turtle then
+    if turtle and turtle.forward then
         deviceType = "turtle"
-    elseif pocket then
+    elseif pocket and pocket.equipBack then
         deviceType = "pocket"
     end
     
@@ -476,9 +476,9 @@ local function main()
     
     -- Detect device type
     local deviceType = "Computer"
-    if turtle then
+    if turtle and turtle.forward then
         deviceType = "Turtle"
-    elseif pocket then
+    elseif pocket and pocket.equipBack then
         deviceType = "Pocket Computer"
     end
     
@@ -517,9 +517,9 @@ local function main()
     
     -- Success!
     local deviceType = "computer"
-    if turtle then
+    if turtle and turtle.forward then
         deviceType = "turtle"
-    elseif pocket then
+    elseif pocket and pocket.equipBack then
         deviceType = "pocket"
     end
     
