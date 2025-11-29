@@ -21,7 +21,13 @@ local oldFiles = {
     "gui-demo.lua",
     "mine-dashboard.lua",
     "main.lua",
-    "installer.lua"
+    "installer.lua",
+    "protocol.lua",
+    "project-manager.lua",
+    "zone-allocator.lua",
+    "coordinator.lua",
+    "turtle-client.lua",
+    "control-center.lua"
 }
 
 local foundOld = false

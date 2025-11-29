@@ -13,16 +13,27 @@ local CORE_FILES = {
     "gui-data.lua"
 }
 
+local NETWORK_FILES = {
+    "protocol.lua",
+    "project-manager.lua",
+    "zone-allocator.lua",
+    "coordinator.lua",
+    "turtle-client.lua"
+}
+
 local EXAMPLE_FILES = {
     "gui-demo.lua",
     "mine-dashboard.lua",
-    "main.lua"
+    "main.lua",
+    "control-center.lua"
 }
 
 local DOC_FILES = {
     "README.md",
     "QUICKSTART.md",
-    "COMPARISON.md"
+    "COMPARISON.md",
+    "DEVICE_GUIDE.md",
+    "NETWORK_GUIDE.md"
 }
 
 -- ========== DOWNLOAD FUNCTIONS ==========
@@ -100,6 +111,24 @@ local function installCore()
     end
 end
 
+local function installNetwork()
+    print("")
+    print("Installing network modules...")
+    print("")
+    
+    local success, failed = downloadFromGitHub(NETWORK_FILES)
+    
+    print("")
+    if #failed > 0 then
+        print("WARNING: " .. #failed .. " network files failed!")
+        print("Network features may not work.")
+        return false
+    else
+        print("Network modules installed: " .. success .. "/" .. #NETWORK_FILES)
+        return true
+    end
+end
+
 local function installExamples()
     print("")
     print("Installing example files...")
@@ -137,41 +166,120 @@ end
 -- ========== STARTUP FILE ==========
 
 local function createStartupFile(startupType)
+    -- Detect device type
+    local deviceType = "computer"
+    if turtle then
+        deviceType = "turtle"
+    elseif pocket then
+        deviceType = "pocket"
+    end
+    
+    print("")
+    print("Device detected: " .. deviceType)
     print("")
     print("Create startup file? This will auto-run on boot.")
-    print("1. Mine Dashboard (mining system)")
-    print("2. GUI Demo")
-    print("3. Example app (main.lua)")
-    print("4. No startup file")
-    print("")
-    print("Enter choice (1-4):")
+    
+    -- Show appropriate options based on device
+    if deviceType == "turtle" then
+        print("1. Turtle Interface (recommended)")
+        print("2. GUI Demo")
+        print("3. No startup file")
+        print("")
+        print("Enter choice (1-3):")
+    elseif deviceType == "pocket" then
+        print("1. Mine Dashboard (project manager)")
+        print("2. Control Center (coordinator)")
+        print("3. GUI Demo")
+        print("4. No startup file")
+        print("")
+        print("Enter choice (1-4):")
+    else
+        print("1. Control Center (coordinator)")
+        print("2. Mine Dashboard (project manager)")
+        print("3. GUI Demo")
+        print("4. No startup file")
+        print("")
+        print("Enter choice (1-4):")
+    end
+    
     local choice = read()
     
     local startupContent
-    if choice == "1" then
-        startupContent = [[-- CCMine Dashboard - Auto-start
-print("Starting Mine Dashboard...")
-sleep(1)
-local dashboard = require("mine-dashboard")
-dashboard.run()
-]]
-    elseif choice == "2" then
-        startupContent = [[-- CCMine GUI Framework - Auto-start Demo
-print("Starting CCMine GUI Demo...")
-sleep(1)
-local demo = require("gui-demo")
-demo.run()
-]]
-    elseif choice == "3" then
-        startupContent = [[-- CCMine GUI Framework - Auto-start App
-print("Starting CCMine Application...")
-sleep(1)
+    
+    -- Generate appropriate startup based on device type
+    if deviceType == "turtle" then
+        if choice == "1" then
+            startupContent = [[-- CCMine Turtle Interface - Auto-start
+print("Starting Turtle Interface...")
+sleep(0.5)
 local app = require("main")
 app.run()
 ]]
-    else
-        print("No startup file created.")
-        return
+        elseif choice == "2" then
+            startupContent = [[-- CCMine GUI Demo - Auto-start
+print("Starting GUI Demo...")
+sleep(0.5)
+local demo = require("gui-demo")
+demo.run()
+]]
+        else
+            print("No startup file created.")
+            return
+        end
+        
+    elseif deviceType == "pocket" then
+        if choice == "1" then
+            startupContent = [[-- CCMine Dashboard - Auto-start
+print("Starting Mine Dashboard...")
+sleep(0.5)
+local dashboard = require("mine-dashboard")
+dashboard.run()
+]]
+        elseif choice == "2" then
+            startupContent = [[-- CCMine Control Center - Auto-start
+print("Starting Control Center...")
+sleep(0.5)
+local control = require("control-center")
+control.run()
+]]
+        elseif choice == "3" then
+            startupContent = [[-- CCMine GUI Demo - Auto-start
+print("Starting GUI Demo...")
+sleep(0.5)
+local demo = require("gui-demo")
+demo.run()
+]]
+        else
+            print("No startup file created.")
+            return
+        end
+        
+    else -- Regular computer
+        if choice == "1" then
+            startupContent = [[-- CCMine Control Center - Auto-start
+print("Starting Control Center...")
+sleep(0.5)
+local control = require("control-center")
+control.run()
+]]
+        elseif choice == "2" then
+            startupContent = [[-- CCMine Dashboard - Auto-start
+print("Starting Mine Dashboard...")
+sleep(0.5)
+local dashboard = require("mine-dashboard")
+dashboard.run()
+]]
+        elseif choice == "3" then
+            startupContent = [[-- CCMine GUI Demo - Auto-start
+print("Starting GUI Demo...")
+sleep(0.5)
+local demo = require("gui-demo")
+demo.run()
+]]
+        else
+            print("No startup file created.")
+            return
+        end
     end
     
     -- Check if startup exists
@@ -205,6 +313,7 @@ local function installFromLocal()
     
     local allFiles = {}
     for _, f in ipairs(CORE_FILES) do table.insert(allFiles, f) end
+    for _, f in ipairs(NETWORK_FILES) do table.insert(allFiles, f) end
     for _, f in ipairs(EXAMPLE_FILES) do table.insert(allFiles, f) end
     
     local missing = {}
@@ -240,6 +349,11 @@ local function showManualInstructions()
         print("  - " .. file)
     end
     print("")
+    print("Network files (for turtle coordination):")
+    for _, file in ipairs(NETWORK_FILES) do
+        print("  - " .. file)
+    end
+    print("")
     print("Example files (optional):")
     for _, file in ipairs(EXAMPLE_FILES) do
         print("  - " .. file)
@@ -250,6 +364,9 @@ local function showManualInstructions()
     print("Then run:")
     print("  lua> demo = require('gui-demo')")
     print("  lua> demo.run()")
+    print("")
+    print("For coordinator: control = require('control-center')")
+    print("For turtles: app = require('main')")
     print("")
 end
 
@@ -263,6 +380,7 @@ local function verifyInstallation()
     local allGood = true
     
     -- Check core files
+    print("Core files:")
     for _, file in ipairs(CORE_FILES) do
         if fs.exists(file) then
             local size = fs.getSize(file)
@@ -273,12 +391,32 @@ local function verifyInstallation()
         end
     end
     
+    -- Check network files
+    print("")
+    print("Network files:")
+    local networkGood = true
+    for _, file in ipairs(NETWORK_FILES) do
+        if fs.exists(file) then
+            local size = fs.getSize(file)
+            print("  OK: " .. file .. " (" .. size .. " bytes)")
+        else
+            print("  MISSING: " .. file)
+            networkGood = false
+        end
+    end
+    
     print("")
     if allGood then
-        print("Installation verified successfully!")
+        print("Core installation verified successfully!")
+        if networkGood then
+            print("Network modules verified successfully!")
+        else
+            print("WARNING: Some network files missing!")
+            print("Network features will not work.")
+        end
         return true
     else
-        print("WARNING: Some files are missing!")
+        print("WARNING: Some core files are missing!")
         print("Framework may not work correctly.")
         return false
     end
@@ -336,10 +474,20 @@ local function main()
     term.clear()
     term.setCursorPos(1, 1)
     
+    -- Detect device type
+    local deviceType = "Computer"
+    if turtle then
+        deviceType = "Turtle"
+    elseif pocket then
+        deviceType = "Pocket Computer"
+    end
+    
     print("============================")
     print("    CCMine - Mining System")
     print("    Version " .. VERSION)
     print("============================")
+    print("")
+    print("Device: " .. deviceType)
     print("")
     print("Installing...")
     print("")
@@ -354,6 +502,7 @@ local function main()
         return
     end
     
+    installNetwork()
     installExamples()
     
     -- Verify
@@ -363,37 +512,51 @@ local function main()
         print("Continuing anyway...")
     end
     
-    -- Create auto-start file
-    print("")
-    print("Creating startup file...")
-    local startupContent = [[-- CCMine Dashboard Auto-start
-print("Starting Mine Dashboard...")
-sleep(0.5)
-local dashboard = require("mine-dashboard")
-dashboard.run()
-]]
-    
-    local file = fs.open("startup.lua", "w")
-    if file then
-        file.write(startupContent)
-        file.close()
-    end
+    -- Ask user what startup they want
+    createStartupFile()
     
     -- Success!
+    local deviceType = "computer"
+    if turtle then
+        deviceType = "turtle"
+    elseif pocket then
+        deviceType = "pocket"
+    end
+    
     print("")
     print("============================")
     print("  Installation Complete!")
     print("============================")
     print("")
-    print("Launching Mine Dashboard...")
-    sleep(2)
     
-    term.clear()
-    term.setCursorPos(1, 1)
+    -- Show device-specific recommendations
+    if deviceType == "turtle" then
+        print("Recommended for Turtles:")
+        print("  - main: Turtle interface")
+        print("")
+        print("Also available:")
+        print("  - gui-demo: Framework demo")
+    elseif deviceType == "pocket" then
+        print("Recommended for Pocket:")
+        print("  - mine-dashboard: Project manager")
+        print("  - control-center: Coordinator")
+        print("")
+        print("Also available:")
+        print("  - gui-demo: Framework demo")
+    else
+        print("Recommended for Computers:")
+        print("  - control-center: Coordinator")
+        print("  - mine-dashboard: Project manager")
+        print("")
+        print("Also available:")
+        print("  - gui-demo: Framework demo")
+    end
     
-    -- Launch dashboard
-    local dashboard = require("mine-dashboard")
-    dashboard.run()
+    print("")
+    print("Reboot to auto-start, or run manually.")
+    print("")
+    print("Press any key to exit...")
+    os.pullEvent("key")
 end
 
 -- Run installer
