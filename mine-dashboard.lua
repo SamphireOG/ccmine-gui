@@ -33,9 +33,6 @@ end
 -- ========== MAIN DASHBOARD SCREEN ==========
 
 function dashboard.mainScreen()
-    -- Clear entire screen first
-    gui.clear()
-    
     -- Title bar
     gui.screen.term.setBackgroundColor(gui.getColor("primary"))
     gui.screen.term.setTextColor(colors.white)
@@ -84,7 +81,7 @@ function dashboard.mainScreen()
                     1,
                     projectName,
                     function()
-                        dashboard.openProject(projectName)
+                        gui.setScreen(function() dashboard.openProject(projectName) end)
                     end
                 )
                 
@@ -116,9 +113,6 @@ end
 -- ========== CREATE PROJECT SCREEN ==========
 
 function dashboard.createProjectScreen()
-    -- Clear screen first
-    gui.clear()
-    
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
     
@@ -257,9 +251,6 @@ function dashboard.openProject(projectName)
         project.turtles = {}
     end
     
-    -- Clear entire screen first
-    gui.clear()
-    
     -- Title bar
     gui.screen.term.setBackgroundColor(gui.getColor("primary"))
     gui.screen.term.setTextColor(colors.white)
@@ -286,19 +277,16 @@ function dashboard.openProject(projectName)
     
     -- Display linked turtles
     if #project.turtles == 0 then
-        -- Empty state - positioned relative to panel interior
-        local noTurtlesLbl = components.createLabel("noturtles", 2, 2, "No turtles linked")
+        local noTurtlesLbl = components.createLabel("noturtles", 2, 2, "No turtles linked yet")
         noTurtlesLbl.parent = panel
         noTurtlesLbl.fgColor = gui.getColor("disabled")
         noTurtlesLbl.zIndex = 10
-        noTurtlesLbl.width = screenW - 10
         panel:addChild(noTurtlesLbl)
         
-        local hintLbl = components.createLabel("hint", 2, 3, "Press 'Link Turtle'")
+        local hintLbl = components.createLabel("hint", 2, 3, "Press 'Link Turtle' above")
         hintLbl.parent = panel
         hintLbl.fgColor = gui.getColor("disabled")
         hintLbl.zIndex = 10
-        hintLbl.width = screenW - 10
         panel:addChild(hintLbl)
     else
         -- Display each turtle with its info
