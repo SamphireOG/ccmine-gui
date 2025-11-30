@@ -717,25 +717,27 @@ function app.startupSequence()
     
     -- Loading panel
     local panelW = math.min(40, w - 4)
+    local panelH = 10
     local panelX = layouts.centerHorizontally(panelW)
-    local panel = components.createPanel("loading", panelX, 4, panelW, 8, "Network Connection")
+    local panelY = math.floor((h - panelH) / 2)
+    local panel = components.createPanel("loading", panelX, panelY, panelW, panelH, "Network Connection")
     panel.borderColor = gui.getColor("border")
     
     -- Turtle info
-    local idLabel = components.createLabel("turtleId", panelX + 2, 6, 
+    local idLabel = components.createLabel("turtleId", panelX + 2, panelY + 2, 
         string.format("ID: %d", os.getComputerID()))
     idLabel.fgColor = colors.lightGray
     idLabel.parent = panel
     panel:addChild(idLabel)
     
     -- Status label
-    local statusLabel = components.createLabel("status", panelX + 2, 8, "Checking for modem...")
+    local statusLabel = components.createLabel("status", panelX + 2, panelY + 4, "Checking for modem...")
     statusLabel.fgColor = gui.getColor("warning")
     statusLabel.parent = panel
     panel:addChild(statusLabel)
     
     -- Loading spinner (will be updated)
-    local spinnerLabel = components.createLabel("spinner", panelX + 2, 10, "")
+    local spinnerLabel = components.createLabel("spinner", panelX + 2, panelY + 6, "")
     spinnerLabel.parent = panel
     panel:addChild(spinnerLabel)
     
