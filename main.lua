@@ -714,7 +714,7 @@ function app.startupSequence()
     -- Loading panel
     local panelW = math.min(40, w - 4)
     local panelX = layouts.centerHorizontally(panelW)
-    local panel = components.createPanel("loading", panelX, 4, panelW, 9, "Network Connection")
+    local panel = components.createPanel("loading", panelX, 4, panelW, 8, "Network Connection")
     panel.borderColor = gui.getColor("border")
     
     -- Turtle info
@@ -729,78 +729,58 @@ function app.startupSequence()
     -- Loading spinner (will be updated)
     local spinnerLabel = components.createLabel("spinner", panelX + 2, 10, "")
     
-    -- Skip hint
-    local skipLabel = components.createLabel("skip", panelX + 2, 11, "Press any key to skip")
-    skipLabel.fgColor = colors.gray
-    
     gui.draw()
-    sleep(0.5)  -- Brief pause so user can see the screen
+    sleep(0.3)
     
-    -- Wait for modem with animation
+    -- ===== STEP 1: WAIT FOR MODEM =====
     local modem = peripheral.find("modem")
-    local skippedModemWait = false
     
     if not modem then
         statusLabel = gui.getComponent("status")
         spinnerLabel = gui.getComponent("spinner")
         
         if statusLabel then
-            statusLabel.text = "NO MODEM - Waiting..."
+            statusLabel.text = "Waiting for modem..."
             statusLabel.fgColor = gui.getColor("error")
         end
         
         gui.draw()
-        sleep(0.5)
         
-        -- Wait for modem to be attached
-        local startTime = os.clock()
+        -- Wait for modem to be attached (no skip option)
         local spinner = {"|", "/", "-", "\\"}
+        local dots = {".", "..", "...", ""}
         local spinnerIndex = 1
+        local dotIndex = 1
         
-        while not modem and not skippedModemWait do
-            -- Check for key press to skip
-            local timer = os.startTimer(0.2)
-            local event, p1, p2, p3 = os.pullEvent()
+        while not modem do
+            -- Wait for event with timeout
+            local timer = os.startTimer(0.25)
+            local event, p1 = os.pullEvent()
             
             if event == "timer" and p1 == timer then
-                -- Update spinner
+                -- Update spinner animation
                 spinnerIndex = spinnerIndex % #spinner + 1
+                dotIndex = dotIndex % #dots + 1
                 if spinnerLabel then
-                    spinnerLabel.text = spinner[spinnerIndex] .. " Please attach a wireless modem"
+                    spinnerLabel.text = string.format("%s Waiting for wireless modem%s", 
+                        spinner[spinnerIndex], dots[dotIndex])
                 end
                 gui.draw()
-            elseif event == "key" or event == "char" then
-                skippedModemWait = true
             elseif event == "peripheral" or event == "peripheral_attach" then
                 -- Check if modem was attached
                 modem = peripheral.find("modem")
             end
         end
         
-        if skippedModemWait then
-            if statusLabel then
-                statusLabel.text = "Skipped - No modem"
-                statusLabel.fgColor = colors.gray
-            end
-            if spinnerLabel then
-                spinnerLabel.text = "Starting in standalone mode..."
-            end
-            gui.draw()
-            sleep(1)
-            app.state.networkEnabled = false
-            app.createMainScreen()
-            return
-        end
-        
         -- Modem found!
         statusLabel = gui.getComponent("status")
         if statusLabel then
-            statusLabel.text = "MODEM ATTACHED!"
+            statusLabel.text = "Modem found!"
             statusLabel.fgColor = gui.getColor("success")
         end
         spinnerLabel = gui.getComponent("spinner")
         if spinnerLabel then
-            spinnerLabel.text = ""
+            spinnerLabel.text = "✓ Wireless modem attached"
         end
         gui.draw()
         sleep(1)
@@ -811,65 +791,92 @@ function app.startupSequence()
             statusLabel.text = "Modem detected!"
             statusLabel.fgColor = gui.getColor("success")
         end
+        spinnerLabel = gui.getComponent("spinner")
+        if spinnerLabel then
+            spinnerLabel.text = "✓ Wireless modem ready"
+        end
         gui.draw()
         sleep(0.5)
     end
     
-    -- Now attempt coordinator connection
+    -- ===== STEP 2: WAIT FOR COORDINATOR =====
     statusLabel = gui.getComponent("status")
     if statusLabel then
-        statusLabel.text = "Searching for coordinator..."
+        statusLabel.text = "Connecting to coordinator..."
         statusLabel.fgColor = gui.getColor("warning")
     end
+    spinnerLabel = gui.getComponent("spinner")
+    if spinnerLabel then
+        spinnerLabel.text = ""
+    end
     gui.draw()
+    sleep(0.3)
     
-    -- Attempt auto-connect
-    local connected, skipped = app.animateLoading(5, function()
-        local c = getClient()
-        if not c then return false end
-        
-        local success = c.init(os.getComputerLabel())
-        if success then
-            app.state.networkEnabled = true
-            app.refreshNetworkStatus()
+    -- Attempt connection with animation (no skip)
+    local connected = false
+    local spinner = {"|", "/", "-", "\\"}
+    local dots = {".", "..", "...", ""}
+    local spinnerIndex = 1
+    local dotIndex = 1
+    local attemptStarted = false
+    
+    -- Start connection attempt in parallel with animation
+    parallel.waitForAny(
+        function()
+            -- Connection attempt
+            local c = getClient()
+            if c then
+                connected = c.init(os.getComputerLabel())
+                if connected then
+                    app.state.networkEnabled = true
+                    app.refreshNetworkStatus()
+                end
+            end
+        end,
+        function()
+            -- Animation loop
+            while not connected do
+                local timer = os.startTimer(0.25)
+                local event, p1 = os.pullEvent("timer")
+                
+                if event == "timer" and p1 == timer then
+                    spinnerIndex = spinnerIndex % #spinner + 1
+                    dotIndex = dotIndex % #dots + 1
+                    spinnerLabel = gui.getComponent("spinner")
+                    if spinnerLabel then
+                        spinnerLabel.text = string.format("%s Searching for coordinator%s", 
+                            spinner[spinnerIndex], dots[dotIndex])
+                    end
+                    gui.draw()
+                end
+            end
         end
-        return success
-    end)
+    )
     
-    -- Update status
+    -- Update final status
     statusLabel = gui.getComponent("status")
-    local spinnerLabel = gui.getComponent("spinner")
+    spinnerLabel = gui.getComponent("spinner")
     
-    if skipped then
+    if connected then
         if statusLabel then
-            statusLabel.text = "Skipped"
-            statusLabel.fgColor = colors.gray
-        end
-        if spinnerLabel then
-            spinnerLabel.text = "Starting in standalone mode..."
-        end
-        gui.draw()
-        sleep(1)
-    elseif connected then
-        if statusLabel then
-            statusLabel.text = "Connected to coordinator!"
+            statusLabel.text = "Connected!"
             statusLabel.fgColor = gui.getColor("success")
         end
         if spinnerLabel then
-            spinnerLabel.text = "Ready!"
-        end
-        gui.draw()
-        sleep(1)
-    else
-        if statusLabel then
-            statusLabel.text = "No coordinator found"
-            statusLabel.fgColor = gui.getColor("warning")
-        end
-        if spinnerLabel then
-            spinnerLabel.text = "Running in standalone mode"
+            spinnerLabel.text = "✓ Linked to coordinator"
         end
         gui.draw()
         sleep(1.5)
+    else
+        if statusLabel then
+            statusLabel.text = "Connection failed"
+            statusLabel.fgColor = gui.getColor("error")
+        end
+        if spinnerLabel then
+            spinnerLabel.text = "✗ Could not reach coordinator"
+        end
+        gui.draw()
+        sleep(2)
     end
     
     -- Show main screen
