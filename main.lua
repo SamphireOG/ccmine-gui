@@ -4,13 +4,27 @@
 local gui = require("gui-core")
 local components = require("gui-components")
 local layouts = require("gui-layouts")
-local client = require("turtle-client")
 
 local app = {}
+local client = nil  -- Load lazily when needed
 
 -- Check if running on a turtle
 if not turtle then
     error("This program must be run on a turtle!")
+end
+
+-- Load client module when needed
+local function getClient()
+    if not client then
+        local success, result = pcall(require, "turtle-client")
+        if success then
+            client = result
+        else
+            print("Warning: turtle-client not available")
+            print(result)
+        end
+    end
+    return client
 end
 
 -- ========== STATE ==========
@@ -44,7 +58,10 @@ function app.updateTurtleInfo()
     
     -- Try to get GPS position
     if app.state.networkEnabled then
-        app.state.position = client.getPosition()
+        local c = getClient()
+        if c then
+            app.state.position = c.getPosition()
+        end
     end
 end
 
@@ -501,7 +518,10 @@ function app.enableNetwork()
     
     -- Attempt connection with animation
     local connected, skipped = app.animateLoading(5, function()
-        local success = client.init(os.getComputerLabel())
+        local c = getClient()
+        if not c then return false end
+        
+        local success = c.init(os.getComputerLabel())
         if success then
             app.state.networkEnabled = true
             app.refreshNetworkStatus()
@@ -550,8 +570,11 @@ function app.refreshNetworkStatus()
         return
     end
     
-    app.state.networkStatus = client.getStatus()
-    app.updateTurtleInfo()
+    local c = getClient()
+    if c then
+        app.state.networkStatus = c.getStatus()
+        app.updateTurtleInfo()
+    end
 end
 
 -- ========== EXIT ==========
@@ -562,7 +585,10 @@ function app.exit()
     
     -- Close network if enabled
     if app.state.networkEnabled then
-        client.close()
+        local c = getClient()
+        if c then
+            c.close()
+        end
     end
     
     term.clear()
@@ -696,7 +722,10 @@ function app.startupSequence()
     
     -- Attempt auto-connect
     local connected, skipped = app.animateLoading(5, function()
-        local success = client.init(os.getComputerLabel())
+        local c = getClient()
+        if not c then return false end
+        
+        local success = c.init(os.getComputerLabel())
         if success then
             app.state.networkEnabled = true
             app.refreshNetworkStatus()
