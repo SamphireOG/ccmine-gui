@@ -50,7 +50,45 @@ function control.showDashboard()
     
     local w, h = layouts.getScreenSize()
     
-    -- Stats Panel
+    -- Detect pocket computer (smaller screen)
+    local isPocket = (w < 40)
+    
+    if isPocket then
+        -- Simplified pocket layout
+        local statsPanel = components.createPanel("stats", 1, 3, w - 1, 6, "Fleet")
+        statsPanel.borderColor = gui.getColor("border")
+        
+        local stats = coordinator.getStats()
+        components.createLabel("totalTurtles", 3, 5,
+            string.format("Turtles: %d (Idle:%d)", stats.totalTurtles, stats.idleTurtles))
+        components.createLabel("totalProjects", 3, 7,
+            string.format("Projects: %d active", stats.activeProjects))
+        
+        -- Buttons
+        local btnY = 10
+        local btnW = math.floor((w - 4) / 2)
+        
+        local turtlesBtn = components.createButton("turtlesBtn", 2, btnY, btnW, 2, "Turtles",
+            function() control.showTurtleList() end)
+        turtlesBtn.bgColor = gui.getColor("primary")
+        
+        local projectsBtn = components.createButton("projectsBtn", btnW + 3, btnY, btnW, 2, "Projects",
+            function() control.showProjectList() end)
+        projectsBtn.bgColor = gui.getColor("primary")
+        
+        local createBtn = components.createButton("createBtn", 2, btnY + 3, w - 3, 2, "New Project",
+            function() control.showCreateProject() end)
+        createBtn.bgColor = gui.getColor("success")
+        
+        local exitBtn = components.createButton("exit", 2, h - 2, w - 3, 2, "Exit",
+            function() control.exit() end)
+        exitBtn.bgColor = gui.getColor("error")
+        
+        gui.draw()
+        return
+    end
+    
+    -- Regular computer layout
     local statsPanel = components.createPanel("stats", 2, 3, 23, 8, "Fleet Overview")
     statsPanel.borderColor = gui.getColor("border")
     
