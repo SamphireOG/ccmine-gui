@@ -58,7 +58,7 @@ function control.showDashboard()
     
     if isPocket then
         -- Simplified pocket layout
-        local statsPanel = components.createPanel("stats", 1, 3, w - 1, 6, "Fleet")
+        local statsPanel = components.createPanel("stats", 1, 3, w - 1, 9, "Fleet")
         statsPanel.borderColor = gui.getColor("border")
         
         local stats = coordinator.getStats()
@@ -68,7 +68,7 @@ function control.showDashboard()
             string.format("Projects: %d active", stats.activeProjects))
         
         -- Main action buttons (moved down more)
-        local btnY = 13
+        local btnY = 15
         local btnW = math.floor((w - 4) / 2)
         
         local turtlesBtn = components.createButton("turtlesBtn", 2, btnY, btnW, 2, "Turtles",
