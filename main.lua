@@ -706,58 +706,62 @@ function app.startupSequence()
     os.pullEvent = os.pullEventRaw
     
     -- Show loading screen
-    gui.clearComponents()
-    gui.clear()
+    term.clear()
+    term.setCursorPos(1, 1)
     
-    local w, h = layouts.getScreenSize()
+    local w, h = term.getSize()
     
     -- Title with Turtle ID
     local turtleLabel = os.getComputerLabel() or ("Turtle-" .. os.getComputerID())
-    gui.centerText(turtleLabel, 1, gui.getColor("primary"), colors.white)
+    term.setBackgroundColor(colors.blue)
+    term.setTextColor(colors.white)
+    local titleX = math.floor((w - #turtleLabel) / 2) + 1
+    term.setCursorPos(titleX, 1)
+    term.write(turtleLabel)
     
-    -- Loading panel (centered vertically)
-    local panelW = math.min(40, w - 4)
+    -- Draw panel box
+    local panelW = w - 2
     local panelH = 9
-    local panelX = layouts.centerHorizontally(panelW)
-    local panelY = layouts.centerVertically(panelH)
-    local panel = components.createPanel("loading", panelX, panelY, panelW, panelH, "Network Connection")
-    panel.borderColor = gui.getColor("border")
+    local panelX = 2
+    local panelY = math.floor((h - panelH) / 2)
     
-    -- Calculate content area (inside the border)
+    -- Panel title bar
+    term.setBackgroundColor(colors.blue)
+    term.setTextColor(colors.white)
+    term.setCursorPos(panelX, panelY)
+    term.write(" Network Connection" .. string.rep(" ", panelW - 20))
+    
+    -- Panel borders
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white)
+    for i = 1, panelH - 1 do
+        term.setCursorPos(panelX, panelY + i)
+        if i == panelH - 1 then
+            term.write(string.rep("-", panelW))
+        else
+            term.write("|" .. string.rep(" ", panelW - 2) .. "|")
+        end
+    end
+    
+    -- Content area
     local contentX = panelX + 2
     local contentY = panelY + 2
     
-    -- Turtle info
-    local idLabel = components.createLabel("turtleId", contentX, contentY, 
-        string.format("ID: %d", os.getComputerID()))
-    idLabel.fgColor = colors.lightGray
+    -- ID label
+    term.setTextColor(colors.lightGray)
+    term.setCursorPos(contentX, contentY)
+    term.write(string.format("ID: %d", os.getComputerID()))
     
-    -- Status label (2 lines below ID)
-    local statusLabel = components.createLabel("status", contentX, contentY + 2, "Checking for modem...")
-    statusLabel.fgColor = gui.getColor("warning")
-    
-    -- Loading spinner (2 lines below status)
-    local spinnerLabel = components.createLabel("spinner", contentX, contentY + 4, "")
-    
-    gui.draw()
     sleep(0.3)
     
     -- ===== STEP 1: WAIT FOR MODEM =====
     local modem = peripheral.find("modem")
     
     if not modem then
-        statusLabel = gui.getComponent("status")
-        spinnerLabel = gui.getComponent("spinner")
-        
-        if statusLabel then
-            statusLabel.text = "Waiting for Modem"
-            statusLabel.fgColor = gui.getColor("warning")
-        end
-        if spinnerLabel then
-            spinnerLabel.text = ""
-        end
-        
-        gui.draw()
+        -- Show waiting message
+        term.setTextColor(colors.orange)
+        term.setCursorPos(contentX, contentY + 2)
+        term.write("Waiting for Modem" .. string.rep(" ", 20))
         
         -- Wait for modem to be attached with loading circle animation
         local circleFrames = {
@@ -827,11 +831,9 @@ function app.startupSequence()
                     -- Update loading circle animation
                     frameIndex = frameIndex % #rotatingCircle + 1
                     
-                    if spinnerLabel then
-                        spinnerLabel.text = rotatingCircle[frameIndex]
-                        spinnerLabel.fgColor = gui.getColor("primary")
-                    end
-                    gui.draw()
+                    term.setTextColor(colors.blue)
+                    term.setCursorPos(contentX, contentY + 4)
+                    term.write(rotatingCircle[frameIndex])
                     break
                 elseif event == "peripheral" or event == "peripheral_attach" then
                     -- Check if modem was attached
@@ -843,45 +845,28 @@ function app.startupSequence()
         end
         
         -- Modem found!
-        statusLabel = gui.getComponent("status")
-        if statusLabel then
-            statusLabel.text = "Modem Found!"
-            statusLabel.fgColor = gui.getColor("success")
-        end
-        spinnerLabel = gui.getComponent("spinner")
-        if spinnerLabel then
-            spinnerLabel.text = "     ✓     "
-            spinnerLabel.fgColor = gui.getColor("success")
-        end
-        gui.draw()
+        term.setTextColor(colors.lime)
+        term.setCursorPos(contentX, contentY + 2)
+        term.write("Modem Found!" .. string.rep(" ", 20))
+        term.setCursorPos(contentX, contentY + 4)
+        term.write("     ✓     ")
         sleep(1)
     else
         -- Already has modem
-        statusLabel = gui.getComponent("status")
-        if statusLabel then
-            statusLabel.text = "Modem Detected"
-            statusLabel.fgColor = gui.getColor("success")
-        end
-        spinnerLabel = gui.getComponent("spinner")
-        if spinnerLabel then
-            spinnerLabel.text = "     ✓     "
-            spinnerLabel.fgColor = gui.getColor("success")
-        end
-        gui.draw()
+        term.setTextColor(colors.lime)
+        term.setCursorPos(contentX, contentY + 2)
+        term.write("Modem Detected" .. string.rep(" ", 20))
+        term.setCursorPos(contentX, contentY + 4)
+        term.write("     ✓     ")
         sleep(0.5)
     end
     
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
-    statusLabel = gui.getComponent("status")
-    if statusLabel then
-        statusLabel.text = "Linking to Coordinator"
-        statusLabel.fgColor = gui.getColor("warning")
-    end
-    spinnerLabel = gui.getComponent("spinner")
-    if spinnerLabel then
-        spinnerLabel.text = ""
-    end
-    gui.draw()
+    term.setTextColor(colors.orange)
+    term.setCursorPos(contentX, contentY + 2)
+    term.write("Linking to Coordinator" .. string.rep(" ", 20))
+    term.setCursorPos(contentX, contentY + 4)
+    term.write(string.rep(" ", 11))
     sleep(0.3)
     
     -- Attempt connection with loading circle animation (no skip)
@@ -923,12 +908,9 @@ function app.startupSequence()
                     -- Only process timer events, ignore key/char/mouse
                     if event == "timer" and p1 == timer then
                         frameIndex = frameIndex % #rotatingCircle + 1
-                        spinnerLabel = gui.getComponent("spinner")
-                        if spinnerLabel then
-                            spinnerLabel.text = rotatingCircle[frameIndex]
-                            spinnerLabel.fgColor = gui.getColor("primary")
-                        end
-                        gui.draw()
+                        term.setTextColor(colors.blue)
+                        term.setCursorPos(contentX, contentY + 4)
+                        term.write(rotatingCircle[frameIndex])
                         break
                     end
                 until event == "timer"
@@ -937,37 +919,27 @@ function app.startupSequence()
     )
     
     -- Update final status
-    statusLabel = gui.getComponent("status")
-    spinnerLabel = gui.getComponent("spinner")
-    
     if connected then
-        if statusLabel then
-            statusLabel.text = "Connected!"
-            statusLabel.fgColor = gui.getColor("success")
-        end
-        if spinnerLabel then
-            spinnerLabel.text = "     ✓     "
-            spinnerLabel.fgColor = gui.getColor("success")
-        end
-        gui.draw()
+        term.setTextColor(colors.lime)
+        term.setCursorPos(contentX, contentY + 2)
+        term.write("Connected!" .. string.rep(" ", 20))
+        term.setCursorPos(contentX, contentY + 4)
+        term.write("     ✓     ")
         sleep(1.5)
     else
-        if statusLabel then
-            statusLabel.text = "Link Failed"
-            statusLabel.fgColor = gui.getColor("error")
-        end
-        if spinnerLabel then
-            spinnerLabel.text = "     ✗     "
-            spinnerLabel.fgColor = gui.getColor("error")
-        end
-        gui.draw()
+        term.setTextColor(colors.red)
+        term.setCursorPos(contentX, contentY + 2)
+        term.write("Link Failed" .. string.rep(" ", 20))
+        term.setCursorPos(contentX, contentY + 4)
+        term.write("     ✗     ")
         sleep(2)
     end
     
     -- Restore original pullEvent (re-enable termination)
     os.pullEvent = originalPullEvent
     
-    -- Show main screen
+    -- Reinitialize GUI system and show main screen
+    gui.init()
     app.createMainScreen()
 end
 
