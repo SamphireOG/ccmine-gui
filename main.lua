@@ -835,12 +835,19 @@ function app.startupSequence()
     end
     
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
-    -- Clear content area only
+    -- Clear content area and redraw borders to fix color issues
     term.setBackgroundColor(colors.black)
-    for i = 0, 5 do
-        term.setCursorPos(contentX, contentY + i)
-        term.clearLine()
+    term.setTextColor(colors.white)
+    
+    -- Redraw panel interior
+    for i = 1, panelH - 2 do
+        term.setCursorPos(panelX, panelY + i)
+        term.write("|" .. string.rep(" ", panelW - 2) .. "|")
     end
+    
+    -- Redraw bottom border
+    term.setCursorPos(panelX, panelY + panelH - 1)
+    term.write(string.rep("-", panelW))
     
     -- Redraw ID
     term.setTextColor(colors.lightGray)
@@ -904,21 +911,14 @@ function app.startupSequence()
             term.redirect(realTerm)
             
             while not connected do
-                local timer = os.startTimer(0.15)
-                repeat
-                    local event, p1 = os.pullEvent()
-                    -- Only process timer events, ignore key/char/mouse
-                    if event == "timer" and p1 == timer then
-                        frameIndex = frameIndex % #rotatingCircle + 1
-                        term.setBackgroundColor(colors.black)
-                        term.setTextColor(colors.blue)
-                        term.setCursorPos(contentX, contentY + 4)
-                        term.clearLine()
-                        term.setCursorPos(contentX, contentY + 4)
-                        term.write(rotatingCircle[frameIndex])
-                        break
-                    end
-                until event == "timer"
+                sleep(0.15)
+                frameIndex = frameIndex % #rotatingCircle + 1
+                term.setBackgroundColor(colors.black)
+                term.setTextColor(colors.blue)
+                term.setCursorPos(contentX, contentY + 4)
+                term.write(string.rep(" ", 10))
+                term.setCursorPos(contentX, contentY + 4)
+                term.write(rotatingCircle[frameIndex])
             end
         end
     )
