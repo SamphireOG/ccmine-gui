@@ -186,19 +186,17 @@ local function createStartupFile(startupType)
         print("")
         print("Enter choice (1-3):")
     elseif deviceType == "pocket" then
-        print("1. Mine Dashboard (project manager)")
-        print("2. Control Center (coordinator)")
-        print("3. GUI Demo")
-        print("4. No startup file")
+        print("1. Control Center (unified manager)")
+        print("2. GUI Demo")
+        print("3. No startup file")
         print("")
-        print("Enter choice (1-4):")
+        print("Enter choice (1-3):")
     else
-        print("1. Control Center (coordinator)")
-        print("2. Mine Dashboard (project manager)")
-        print("3. GUI Demo")
-        print("4. No startup file")
+        print("1. Control Center (unified manager)")
+        print("2. GUI Demo")
+        print("3. No startup file")
         print("")
-        print("Enter choice (1-4):")
+        print("Enter choice (1-3):")
     end
     
     local choice = read()
@@ -228,20 +226,13 @@ demo.run()
         
     elseif deviceType == "pocket" then
         if choice == "1" then
-            startupContent = [[-- CCMine Dashboard - Auto-start
-print("Starting Mine Dashboard...")
-sleep(0.5)
-local dashboard = require("mine-dashboard")
-dashboard.run()
-]]
-        elseif choice == "2" then
             startupContent = [[-- CCMine Control Center - Auto-start
 print("Starting Control Center...")
 sleep(0.5)
 local control = require("control-center")
 control.run()
 ]]
-        elseif choice == "3" then
+        elseif choice == "2" then
             startupContent = [[-- CCMine GUI Demo - Auto-start
 print("Starting GUI Demo...")
 sleep(0.5)
@@ -262,13 +253,6 @@ local control = require("control-center")
 control.run()
 ]]
         elseif choice == "2" then
-            startupContent = [[-- CCMine Dashboard - Auto-start
-print("Starting Mine Dashboard...")
-sleep(0.5)
-local dashboard = require("mine-dashboard")
-dashboard.run()
-]]
-        elseif choice == "3" then
             startupContent = [[-- CCMine GUI Demo - Auto-start
 print("Starting GUI Demo...")
 sleep(0.5)
