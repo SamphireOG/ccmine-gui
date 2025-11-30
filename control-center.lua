@@ -43,7 +43,10 @@ end
 
 function control.showDashboard()
     control.state.currentScreen = "dashboard"
+    term.clear()
+    term.setCursorPos(1, 1)
     gui.clearComponents()
+    gui.clear()
     
     -- Title
     gui.centerText("CCMine Control Center", 1, gui.getColor("primary"), colors.white)
@@ -153,7 +156,10 @@ end
 
 function control.showTurtleList()
     control.state.currentScreen = "turtles"
+    term.clear()
+    term.setCursorPos(1, 1)
     gui.clearComponents()
+    gui.clear()
     
     -- Title
     gui.centerText("Turtle Fleet", 1, gui.getColor("primary"), colors.white)
@@ -209,7 +215,10 @@ function control.showTurtleDetail()
     end
     
     control.state.currentScreen = "turtleDetail"
+    term.clear()
+    term.setCursorPos(1, 1)
     gui.clearComponents()
+    gui.clear()
     
     local turtle = control.state.selectedTurtle
     
@@ -266,7 +275,10 @@ end
 
 function control.showProjectList()
     control.state.currentScreen = "projects"
+    term.clear()
+    term.setCursorPos(1, 1)
     gui.clearComponents()
+    gui.clear()
     
     -- Title
     gui.centerText("Project Manager", 1, gui.getColor("primary"), colors.white)
@@ -317,7 +329,10 @@ function control.showProjectDetail()
     end
     
     control.state.currentScreen = "projectDetail"
+    term.clear()
+    term.setCursorPos(1, 1)
     gui.clearComponents()
+    gui.clear()
     
     local project = control.state.selectedProject
     
@@ -392,7 +407,10 @@ end
 
 function control.showCreateProject()
     control.state.currentScreen = "createProject"
+    term.clear()
+    term.setCursorPos(1, 1)
     gui.clearComponents()
+    gui.clear()
     
     local w, h = layouts.getScreenSize()
     
@@ -480,7 +498,10 @@ function control.showAssignProject()
     end
     
     control.state.currentScreen = "assignProject"
+    term.clear()
+    term.setCursorPos(1, 1)
     gui.clearComponents()
+    gui.clear()
     
     local turtle = control.state.selectedTurtle
     
