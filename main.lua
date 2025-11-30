@@ -744,31 +744,86 @@ function app.startupSequence()
         spinnerLabel = gui.getComponent("spinner")
         
         if statusLabel then
-            statusLabel.text = "Waiting for modem..."
-            statusLabel.fgColor = gui.getColor("error")
+            statusLabel.text = "Waiting for Modem"
+            statusLabel.fgColor = gui.getColor("warning")
+        end
+        if spinnerLabel then
+            spinnerLabel.text = ""
         end
         
         gui.draw()
         
-        -- Wait for modem to be attached (no skip option)
-        local spinner = {"|", "/", "-", "\\"}
-        local dots = {".", "..", "...", ""}
-        local spinnerIndex = 1
-        local dotIndex = 1
+        -- Wait for modem to be attached with loading circle animation
+        local circleFrames = {
+            "    o o o    ",
+            "   o   o     ",
+            "  o     o    ",
+            "  o      o   ",
+            " o        o  ",
+            "o          o ",
+            "o          o ",
+            " o        o  ",
+            "  o      o   ",
+            "  o     o    ",
+            "   o   o     ",
+            "    o o      "
+        }
+        
+        -- Better circle animation using segments
+        local circleSegments = {
+            "   .....   ",
+            "  .     .  ",
+            " .       . ",
+            ".         .",
+            "           ",
+            ".         .",
+            " .       . ",
+            "  .     .  ",
+        }
+        
+        -- Rotating segments
+        local loadingFrames = {
+            "     o     ",
+            "    ooo    ",
+            "   o   o   ",
+            "  o     o  ",
+            " o       o ",
+            "o         o",
+            "           ",
+            "o         o",
+            " o       o ",
+            "  o     o  ",
+            "   o   o   ",
+            "    ooo    ",
+        }
+        
+        -- Simple rotating circle
+        local rotatingCircle = {
+            "    ●      ",
+            "   ●       ",
+            "  ●        ",
+            " ●         ",
+            "●          ",
+            " ●         ",
+            "  ●        ",
+            "   ●       ",
+        }
+        
+        local frameIndex = 1
         
         while not modem do
             -- Wait for event with timeout (filter out key/char events)
-            local timer = os.startTimer(0.25)
+            local timer = os.startTimer(0.15)
             repeat
                 local event, p1 = os.pullEvent()
                 
                 if event == "timer" and p1 == timer then
-                    -- Update spinner animation
-                    spinnerIndex = spinnerIndex % #spinner + 1
-                    dotIndex = dotIndex % #dots + 1
+                    -- Update loading circle animation
+                    frameIndex = frameIndex % #rotatingCircle + 1
+                    
                     if spinnerLabel then
-                        spinnerLabel.text = string.format("%s Waiting for wireless modem%s", 
-                            spinner[spinnerIndex], dots[dotIndex])
+                        spinnerLabel.text = rotatingCircle[frameIndex]
+                        spinnerLabel.fgColor = gui.getColor("primary")
                     end
                     gui.draw()
                     break
@@ -784,12 +839,13 @@ function app.startupSequence()
         -- Modem found!
         statusLabel = gui.getComponent("status")
         if statusLabel then
-            statusLabel.text = "Modem found!"
+            statusLabel.text = "Modem Found!"
             statusLabel.fgColor = gui.getColor("success")
         end
         spinnerLabel = gui.getComponent("spinner")
         if spinnerLabel then
-            spinnerLabel.text = "✓ Wireless modem attached"
+            spinnerLabel.text = "     ✓     "
+            spinnerLabel.fgColor = gui.getColor("success")
         end
         gui.draw()
         sleep(1)
@@ -797,12 +853,13 @@ function app.startupSequence()
         -- Already has modem
         statusLabel = gui.getComponent("status")
         if statusLabel then
-            statusLabel.text = "Modem detected!"
+            statusLabel.text = "Modem Detected"
             statusLabel.fgColor = gui.getColor("success")
         end
         spinnerLabel = gui.getComponent("spinner")
         if spinnerLabel then
-            spinnerLabel.text = "✓ Wireless modem ready"
+            spinnerLabel.text = "     ✓     "
+            spinnerLabel.fgColor = gui.getColor("success")
         end
         gui.draw()
         sleep(0.5)
@@ -811,7 +868,7 @@ function app.startupSequence()
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
     statusLabel = gui.getComponent("status")
     if statusLabel then
-        statusLabel.text = "Connecting to coordinator..."
+        statusLabel.text = "Linking to Coordinator"
         statusLabel.fgColor = gui.getColor("warning")
     end
     spinnerLabel = gui.getComponent("spinner")
@@ -821,13 +878,22 @@ function app.startupSequence()
     gui.draw()
     sleep(0.3)
     
-    -- Attempt connection with animation (no skip)
+    -- Attempt connection with loading circle animation (no skip)
     local connected = false
-    local spinner = {"|", "/", "-", "\\"}
-    local dots = {".", "..", "...", ""}
-    local spinnerIndex = 1
-    local dotIndex = 1
-    local attemptStarted = false
+    
+    -- Rotating circle animation
+    local rotatingCircle = {
+        "    ●      ",
+        "   ●       ",
+        "  ●        ",
+        " ●         ",
+        "●          ",
+        " ●         ",
+        "  ●        ",
+        "   ●       ",
+    }
+    
+    local frameIndex = 1
     
     -- Start connection attempt in parallel with animation
     parallel.waitForAny(
@@ -845,17 +911,16 @@ function app.startupSequence()
         function()
             -- Animation loop - ignore all key presses
             while not connected do
-                local timer = os.startTimer(0.25)
+                local timer = os.startTimer(0.15)
                 repeat
                     local event, p1 = os.pullEvent()
                     -- Only process timer events, ignore key/char/mouse
                     if event == "timer" and p1 == timer then
-                        spinnerIndex = spinnerIndex % #spinner + 1
-                        dotIndex = dotIndex % #dots + 1
+                        frameIndex = frameIndex % #rotatingCircle + 1
                         spinnerLabel = gui.getComponent("spinner")
                         if spinnerLabel then
-                            spinnerLabel.text = string.format("%s Searching for coordinator%s", 
-                                spinner[spinnerIndex], dots[dotIndex])
+                            spinnerLabel.text = rotatingCircle[frameIndex]
+                            spinnerLabel.fgColor = gui.getColor("primary")
                         end
                         gui.draw()
                         break
@@ -875,17 +940,19 @@ function app.startupSequence()
             statusLabel.fgColor = gui.getColor("success")
         end
         if spinnerLabel then
-            spinnerLabel.text = "✓ Linked to coordinator"
+            spinnerLabel.text = "     ✓     "
+            spinnerLabel.fgColor = gui.getColor("success")
         end
         gui.draw()
         sleep(1.5)
     else
         if statusLabel then
-            statusLabel.text = "Connection failed"
+            statusLabel.text = "Link Failed"
             statusLabel.fgColor = gui.getColor("error")
         end
         if spinnerLabel then
-            spinnerLabel.text = "✗ Could not reach coordinator"
+            spinnerLabel.text = "     ✗     "
+            spinnerLabel.fgColor = gui.getColor("error")
         end
         gui.draw()
         sleep(2)
