@@ -701,6 +701,10 @@ function app.animateLoading(duration, callback)
 end
 
 function app.startupSequence()
+    -- Save original pullEvent and disable termination during startup
+    local originalPullEvent = os.pullEvent
+    os.pullEvent = os.pullEventRaw
+    
     -- Show loading screen
     gui.clearComponents()
     gui.clear()
@@ -753,23 +757,28 @@ function app.startupSequence()
         local dotIndex = 1
         
         while not modem do
-            -- Wait for event with timeout
+            -- Wait for event with timeout (filter out key/char events)
             local timer = os.startTimer(0.25)
-            local event, p1 = os.pullEvent()
-            
-            if event == "timer" and p1 == timer then
-                -- Update spinner animation
-                spinnerIndex = spinnerIndex % #spinner + 1
-                dotIndex = dotIndex % #dots + 1
-                if spinnerLabel then
-                    spinnerLabel.text = string.format("%s Waiting for wireless modem%s", 
-                        spinner[spinnerIndex], dots[dotIndex])
+            repeat
+                local event, p1 = os.pullEvent()
+                
+                if event == "timer" and p1 == timer then
+                    -- Update spinner animation
+                    spinnerIndex = spinnerIndex % #spinner + 1
+                    dotIndex = dotIndex % #dots + 1
+                    if spinnerLabel then
+                        spinnerLabel.text = string.format("%s Waiting for wireless modem%s", 
+                            spinner[spinnerIndex], dots[dotIndex])
+                    end
+                    gui.draw()
+                    break
+                elseif event == "peripheral" or event == "peripheral_attach" then
+                    -- Check if modem was attached
+                    modem = peripheral.find("modem")
+                    if modem then break end
                 end
-                gui.draw()
-            elseif event == "peripheral" or event == "peripheral_attach" then
-                -- Check if modem was attached
-                modem = peripheral.find("modem")
-            end
+                -- Ignore key, char, mouse events - keep waiting
+            until event == "timer" or event == "peripheral" or event == "peripheral_attach"
         end
         
         -- Modem found!
@@ -834,21 +843,24 @@ function app.startupSequence()
             end
         end,
         function()
-            -- Animation loop
+            -- Animation loop - ignore all key presses
             while not connected do
                 local timer = os.startTimer(0.25)
-                local event, p1 = os.pullEvent("timer")
-                
-                if event == "timer" and p1 == timer then
-                    spinnerIndex = spinnerIndex % #spinner + 1
-                    dotIndex = dotIndex % #dots + 1
-                    spinnerLabel = gui.getComponent("spinner")
-                    if spinnerLabel then
-                        spinnerLabel.text = string.format("%s Searching for coordinator%s", 
-                            spinner[spinnerIndex], dots[dotIndex])
+                repeat
+                    local event, p1 = os.pullEvent()
+                    -- Only process timer events, ignore key/char/mouse
+                    if event == "timer" and p1 == timer then
+                        spinnerIndex = spinnerIndex % #spinner + 1
+                        dotIndex = dotIndex % #dots + 1
+                        spinnerLabel = gui.getComponent("spinner")
+                        if spinnerLabel then
+                            spinnerLabel.text = string.format("%s Searching for coordinator%s", 
+                                spinner[spinnerIndex], dots[dotIndex])
+                        end
+                        gui.draw()
+                        break
                     end
-                    gui.draw()
-                end
+                until event == "timer"
             end
         end
     )
@@ -878,6 +890,9 @@ function app.startupSequence()
         gui.draw()
         sleep(2)
     end
+    
+    -- Restore original pullEvent (re-enable termination)
+    os.pullEvent = originalPullEvent
     
     -- Show main screen
     app.createMainScreen()
