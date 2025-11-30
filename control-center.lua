@@ -67,8 +67,8 @@ function control.showDashboard()
         components.createLabel("totalProjects", 3, 7,
             string.format("Projects: %d active", stats.activeProjects))
         
-        -- Main action buttons (moved down, removed New Project)
-        local btnY = 11
+        -- Main action buttons (moved down more)
+        local btnY = 13
         local btnW = math.floor((w - 4) / 2)
         
         local turtlesBtn = components.createButton("turtlesBtn", 2, btnY, btnW, 2, "Turtles",
