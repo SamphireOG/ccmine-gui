@@ -725,13 +725,19 @@ function app.startupSequence()
     local idLabel = components.createLabel("turtleId", panelX + 2, 6, 
         string.format("ID: %d", os.getComputerID()))
     idLabel.fgColor = colors.lightGray
+    idLabel.parent = panel
+    panel:addChild(idLabel)
     
     -- Status label
     local statusLabel = components.createLabel("status", panelX + 2, 8, "Checking for modem...")
     statusLabel.fgColor = gui.getColor("warning")
+    statusLabel.parent = panel
+    panel:addChild(statusLabel)
     
     -- Loading spinner (will be updated)
     local spinnerLabel = components.createLabel("spinner", panelX + 2, 10, "")
+    spinnerLabel.parent = panel
+    panel:addChild(spinnerLabel)
     
     gui.draw()
     sleep(0.3)
