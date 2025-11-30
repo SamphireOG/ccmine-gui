@@ -68,8 +68,8 @@ function app.createMainScreen()
     
     app.updateTurtleInfo()
     
-    -- Get screen dimensions
-    local w, h = term.getSize()
+    -- Get screen dimensions using responsive helper
+    local w, h = layouts.getScreenSize()
     
     -- Create layout regions
     local regions = layouts.createRegions({
@@ -85,69 +85,65 @@ function app.createMainScreen()
         turtleLabel)
     header.titleBgColor = gui.getColor("primary")
     
-    -- Status Panel (responsive width)
-    local statusPanel = components.createPanel("status", 1, 5, w, 8, "Turtle Status")
+    -- Status Panel (responsive using helper)
+    local statusPanel = layouts.createFullWidthPanel("status", 5, 8, "Turtle Status")
     statusPanel.borderColor = gui.getColor("border")
     
     -- Fuel Bar (responsive)
-    local fuelLabel = components.createLabel("fuelLabel", 3, 7, "Fuel:")
+    local fuelLabel = components.createLabel("fuelLabel", 2, 7, "Fuel:")
     local fuelPercent = math.floor((app.state.fuel / app.state.maxFuel) * 100)
-    local fuelBar = components.createProgressBar("fuelBar", 9, 7, w - 10)
+    local fuelBar = components.createProgressBar("fuelBar", 8, 7, w - 10)
     fuelBar.value = fuelPercent
     fuelBar.fillColor = fuelPercent > 50 and gui.getColor("success") or 
                         fuelPercent > 20 and gui.getColor("warning") or 
                         gui.getColor("error")
     
     -- Inventory Bar (responsive)
-    local invLabel = components.createLabel("invLabel", 3, 8, "Inv:")
+    local invLabel = components.createLabel("invLabel", 2, 8, "Inv:")
     local invPercent = math.floor((app.state.inventory / app.state.maxInventory) * 100)
-    local invBar = components.createProgressBar("invBar", 9, 8, w - 10)
+    local invBar = components.createProgressBar("invBar", 8, 8, w - 10)
     invBar.value = invPercent
     
-    -- Position (shortened for narrow screens)
-    local posLabel = components.createLabel("position", 3, 10,
+    -- Position
+    local posLabel = components.createLabel("position", 2, 10,
         string.format("X:%d Y:%d Z:%d", 
             app.state.position.x, app.state.position.y, app.state.position.z))
     
     -- Status
     local statusText = app.state.mining and "MINING" or "IDLE"
-    local statusLabel = components.createLabel("statusText", 3, 11, "Status: " .. statusText)
+    local statusLabel = components.createLabel("statusText", 2, 11, "Status: " .. statusText)
     statusLabel.fgColor = app.state.mining and gui.getColor("success") or gui.getColor("warning")
     
     -- Network Status (only if enough space)
     if app.state.networkEnabled and w >= 39 then
         local netStatus = app.state.networkStatus or {}
-        local netLabel = components.createLabel("netStatus", w - 9, 11,
+        local netLabel = components.createLabel("netStatus", w - 10, 11,
             netStatus.connected and "[NET:ON]" or "[NET:OFF]")
         netLabel.fgColor = netStatus.connected and gui.getColor("success") or gui.getColor("error")
     end
     
-    -- Footer buttons - responsive sizing
-    local btnW = math.floor((w - 2) / 4)
-    local btn1X = 1
-    local btn2X = btn1X + btnW
-    local btn3X = btn2X + btnW
-    local btn4X = btn3X + btnW
+    -- Footer buttons using responsive helper
+    local _, positions = layouts.calculateButtonRow(4, 1, 0)
     
-    local moveBtn = components.createButton("move", btn1X, regions.footer.y, btnW, 2, "Move",
+    local moveBtn = components.createButton("move", positions[1].x, regions.footer.y, positions[1].width, 2, "Move",
         function()
             app.showMoveScreen()
         end)
     moveBtn.bgColor = gui.getColor("primary")
     
-    local mineBtn = components.createButton("mine", btn2X, regions.footer.y, btnW, 2, "Mine",
+    local mineBtn = components.createButton("mine", positions[2].x, regions.footer.y, positions[2].width, 2, "Mine",
         function()
             app.showMineScreen()
         end)
     mineBtn.bgColor = gui.getColor("success")
     
-    local netBtn = components.createButton("network", btn3X, regions.footer.y, btnW, 2, "Net",
+    local netBtn = components.createButton("network", positions[3].x, regions.footer.y, positions[3].width, 2, "Net",
         function()
             app.showNetworkScreen()
         end)
     netBtn.bgColor = app.state.networkEnabled and gui.getColor("primary") or colors.gray
     
-    local exitBtn = components.createButton("exit", btn4X, regions.footer.y, btnW + 1, 2, "Exit",
+    local exitBtn = components.createButton("exit", positions[4].x, regions.footer.y, positions[4].width, 2, "Exit",
         function()
             app.exit()
         end)
@@ -167,7 +163,7 @@ function app.showMoveScreen()
     gui.centerText("Turtle Movement", 1, gui.getColor("primary"), colors.white)
     
     -- Movement Panel (responsive)
-    local panel = components.createPanel("move", 2, 3, w - 2, 14, "Controls")
+    local panel = components.createPanel("move", 1, 3, w - 1, 14, "Controls")
     panel.borderColor = gui.getColor("border")
     
     -- Center column for main buttons
@@ -243,14 +239,16 @@ function app.showMineScreen()
     gui.centerText("Mining Controls", 1, gui.getColor("primary"), colors.white)
     
     -- Mining Panel (responsive)
-    local panel = components.createPanel("mine", 2, 3, w - 2, h - 5, "Actions")
+    local panel = components.createPanel("mine", 1, 3, w - 1, h - 5, "Actions")
     panel.borderColor = gui.getColor("border")
     
     -- Button sizing (3 columns)
-    local btnW = math.floor((w - 6) / 3)
-    local col1 = 4
+    local btnW = math.floor((w - 8) / 3)
+    local col1 = 3
     local col2 = col1 + btnW + 1
     local col3 = col2 + btnW + 1
+    -- Ensure third column doesn't exceed screen
+    local btn3W = math.min(btnW, w - col3 - 1)
     
     -- Dig Forward
     local digFwdBtn = components.createButton("digfwd", col1, 5, btnW, 2, "Dig Fwd", function()
@@ -269,7 +267,7 @@ function app.showMineScreen()
     digUpBtn.bgColor = gui.getColor("warning")
     
     -- Dig Down
-    local digDownBtn = components.createButton("digdown", col3, 5, btnW, 2, "Dig Down", function()
+    local digDownBtn = components.createButton("digdown", col3, 5, btn3W, 2, "Dig Dn", function()
         if turtle.digDown() then
             gui.notify("Dug down", colors.white, gui.getColor("success"), 1)
         end
@@ -293,7 +291,7 @@ function app.showMineScreen()
     placeUpBtn.bgColor = gui.getColor("success")
     
     -- Place Down
-    local placeDownBtn = components.createButton("placedown", col3, 8, btnW, 2, "Plc Down", function()
+    local placeDownBtn = components.createButton("placedown", col3, 8, btn3W, 2, "Plc Dn", function()
         if turtle.placeDown() then
             gui.notify("Placed", colors.white, gui.getColor("success"), 1)
         end
@@ -301,20 +299,23 @@ function app.showMineScreen()
     placeDownBtn.bgColor = gui.getColor("success")
     
     -- Refuel button (2 columns)
-    local btn2W = math.floor((w - 5) / 2)
-    local refuelBtn = components.createButton("refuel", 4, 11, btn2W, 2, "Refuel S1", function()
+    local btn2W = math.floor((w - 6) / 2)
+    local btn2Col2 = 3 + btn2W + 1
+    local btn2W2 = w - btn2Col2 - 1
+    
+    local refuelBtn = components.createButton("refuel", 3, 11, btn2W, 2, "Refuel", function()
         app.refuelFromSlot(1)
     end)
     refuelBtn.bgColor = gui.getColor("primary")
     
     -- Inventory button
-    local invBtn = components.createButton("inventory", 4 + btn2W + 1, 11, btn2W, 2, "Inventory", function()
+    local invBtn = components.createButton("inventory", btn2Col2, 11, btn2W2, 2, "Inv", function()
         app.showInventoryScreen()
     end)
     
     -- Drop All button (centered)
-    local dropBtnW = math.floor((w - 4) / 2)
-    local dropBtn = components.createButton("drop", 4, 14, dropBtnW, 2, "Drop All", function()
+    local dropBtnW = math.floor((w - 6) / 2)
+    local dropBtn = components.createButton("drop", 3, 14, dropBtnW, 2, "Drop All", function()
         for slot = 1, 16 do
             turtle.select(slot)
             turtle.drop()
@@ -346,11 +347,11 @@ function app.showInventoryScreen()
     gui.centerText("Turtle Inventory", 1, gui.getColor("primary"), colors.white)
     
     -- Inventory grid (responsive)
-    local panel = components.createPanel("inv", 2, 3, w - 2, h - 4, "16 Slots")
+    local panel = components.createPanel("inv", 1, 3, w - 1, h - 4, "16 Slots")
     panel.borderColor = gui.getColor("border")
     
     -- Calculate button size for 4x4 grid
-    local btnW = math.floor((w - 8) / 4)
+    local btnW = math.floor((w - 9) / 4)
     local btnH = 2
     local spacing = 1
     
@@ -359,7 +360,7 @@ function app.showInventoryScreen()
         local row = math.floor((slot - 1) / 4)
         local col = (slot - 1) % 4
         
-        local x = 4 + (col * (btnW + spacing))
+        local x = 3 + (col * (btnW + spacing))
         local y = 5 + (row * (btnH + spacing))
         
         local item = turtle.getItemDetail(slot)
@@ -399,7 +400,7 @@ function app.showNetworkScreen()
     local status = app.state.networkStatus or {}
     
     -- Connection Panel (responsive)
-    local connPanel = components.createPanel("conn", 1, 3, w, 7, "Connection")
+    local connPanel = components.createPanel("conn", 1, 3, w - 1, 7, "Connection")
     connPanel.borderColor = gui.getColor("border")
     
     local connLabel = components.createLabel("connStatus", 3, 5,
@@ -420,7 +421,7 @@ function app.showNetworkScreen()
     
     -- Project Panel (responsive)
     if status.currentProject then
-        local projPanel = components.createPanel("proj", 1, 11, w, 7, "Project")
+        local projPanel = components.createPanel("proj", 1, 11, w - 1, 7, "Project")
         projPanel.borderColor = gui.getColor("border")
         
         local projName = components.createLabel("projName", 3, 13,
@@ -449,7 +450,9 @@ function app.showNetworkScreen()
     
     -- Control Buttons (responsive, 2 columns)
     local btnY = h - 2
-    local btnW = math.floor((w - 2) / 2)
+    local btnW = math.floor((w - 3) / 2)  -- Account for gap
+    local btn2X = 1 + btnW + 1
+    local btn2W = w - btn2X  -- Calculate remaining width for second button
     
     if not app.state.networkEnabled then
         local enableBtn = components.createButton("enable", 1, btnY, btnW, 2, "Enable",
@@ -466,7 +469,7 @@ function app.showNetworkScreen()
     end
     
     -- Back button
-    local backBtn = components.createButton("back", 1 + btnW + 1, btnY, btnW, 2, "Back",
+    local backBtn = components.createButton("back", btn2X, btnY, btn2W, 2, "Back",
         function()
             app.createMainScreen()
         end)

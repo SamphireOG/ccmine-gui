@@ -463,5 +463,201 @@ function layouts.createFormLayout(id, x, y, width)
     return gui.registerComponent(layout)
 end
 
+-- ========== RESPONSIVE LAYOUT HELPERS ==========
+
+-- Get current screen dimensions
+function layouts.getScreenSize()
+    return term.getSize()
+end
+
+-- Calculate responsive button sizes for a row
+-- Returns: buttonWidth, positions array
+function layouts.calculateButtonRow(numButtons, spacing, margin)
+    local w = term.getSize()
+    spacing = spacing or 1
+    margin = margin or 0
+    
+    local availableWidth = w - (margin * 2) - (spacing * (numButtons - 1))
+    local buttonWidth = math.floor(availableWidth / numButtons)
+    
+    local positions = {}
+    for i = 1, numButtons do
+        positions[i] = {
+            x = margin + ((i - 1) * (buttonWidth + spacing)),
+            width = buttonWidth
+        }
+    end
+    
+    -- Adjust last button to fill remaining space
+    if numButtons > 0 then
+        local lastPos = positions[numButtons]
+        lastPos.width = w - lastPos.x - margin
+    end
+    
+    return buttonWidth, positions
+end
+
+-- Create a responsive grid layout
+-- Returns: cellWidth, cellHeight, grid positions
+function layouts.createResponsiveGrid(cols, rows, spacing, margin)
+    local w, h = term.getSize()
+    spacing = spacing or 1
+    margin = margin or 1
+    
+    local availableWidth = w - (margin * 2) - (spacing * (cols - 1))
+    local availableHeight = h - (margin * 2) - (spacing * (rows - 1))
+    
+    local cellWidth = math.floor(availableWidth / cols)
+    local cellHeight = math.floor(availableHeight / rows)
+    
+    local positions = {}
+    for row = 1, rows do
+        positions[row] = {}
+        for col = 1, cols do
+            local x = margin + ((col - 1) * (cellWidth + spacing))
+            local y = margin + ((row - 1) * (cellHeight + spacing))
+            
+            -- Adjust last column to fill remaining width
+            local w = cellWidth
+            if col == cols then
+                w = term.getSize() - x - margin
+            end
+            
+            positions[row][col] = {
+                x = x,
+                y = y,
+                width = w,
+                height = cellHeight
+            }
+        end
+    end
+    
+    return cellWidth, cellHeight, positions
+end
+
+-- Create a full-width panel
+function layouts.createFullWidthPanel(id, y, height, title)
+    local w = term.getSize()
+    return components.createPanel(id, 1, y, w - 1, height, title)
+end
+
+-- Center a component horizontally
+function layouts.centerHorizontally(componentWidth)
+    local w = term.getSize()
+    return math.floor((w - componentWidth) / 2)
+end
+
+-- Center a component vertically
+function layouts.centerVertically(componentHeight)
+    local _, h = term.getSize()
+    return math.floor((h - componentHeight) / 2)
+end
+
+-- Center a component both horizontally and vertically
+function layouts.centerBoth(componentWidth, componentHeight)
+    return layouts.centerHorizontally(componentWidth), 
+           layouts.centerVertically(componentHeight)
+end
+
+-- Calculate responsive column widths
+-- Takes array of weights (e.g., {1, 2, 1} for 25%, 50%, 25%)
+function layouts.calculateColumns(weights, spacing, margin)
+    local w = term.getSize()
+    spacing = spacing or 1
+    margin = margin or 0
+    
+    local numCols = #weights
+    local totalWeight = 0
+    for _, weight in ipairs(weights) do
+        totalWeight = totalWeight + weight
+    end
+    
+    local availableWidth = w - (margin * 2) - (spacing * (numCols - 1))
+    
+    local columns = {}
+    local currentX = margin
+    
+    for i, weight in ipairs(weights) do
+        local colWidth = math.floor((availableWidth * weight) / totalWeight)
+        
+        -- Last column gets remaining space
+        if i == numCols then
+            colWidth = w - currentX - margin
+        end
+        
+        columns[i] = {
+            x = currentX,
+            width = colWidth
+        }
+        
+        currentX = currentX + colWidth + spacing
+    end
+    
+    return columns
+end
+
+-- Create responsive footer with evenly distributed buttons
+function layouts.createFooter(height, buttonLabels, callbacks, margin)
+    local w, h = term.getSize()
+    height = height or 3
+    margin = margin or 0
+    
+    local footerY = h - height + 1
+    local numButtons = #buttonLabels
+    local _, positions = layouts.calculateButtonRow(numButtons, 1, margin)
+    
+    local buttons = {}
+    for i, label in ipairs(buttonLabels) do
+        local pos = positions[i]
+        local btn = components.createButton(
+            "footer_btn_" .. i,
+            pos.x,
+            footerY,
+            pos.width,
+            height - 1,
+            label,
+            callbacks[i]
+        )
+        table.insert(buttons, btn)
+    end
+    
+    return buttons, footerY
+end
+
+-- Get safe content area (excludes header/footer)
+function layouts.getContentArea(headerHeight, footerHeight)
+    local w, h = term.getSize()
+    headerHeight = headerHeight or 0
+    footerHeight = footerHeight or 0
+    
+    return {
+        x = 1,
+        y = headerHeight + 1,
+        width = w,
+        height = h - headerHeight - footerHeight
+    }
+end
+
+-- Check if component fits on screen
+function layouts.fitsOnScreen(x, y, width, height)
+    local w, h = term.getSize()
+    return x >= 1 and y >= 1 and (x + width - 1) <= w and (y + height - 1) <= h
+end
+
+-- Constrain dimensions to fit screen
+function layouts.constrainToScreen(x, y, width, height)
+    local w, h = term.getSize()
+    
+    -- Constrain position
+    x = math.max(1, math.min(x, w))
+    y = math.max(1, math.min(y, h))
+    
+    -- Constrain size
+    width = math.min(width, w - x + 1)
+    height = math.min(height, h - y + 1)
+    
+    return x, y, width, height
+end
+
 return layouts
 
