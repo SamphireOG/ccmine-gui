@@ -805,40 +805,47 @@ function app.startupSequence()
             until event == "timer" or event == "peripheral" or event == "peripheral_attach"
         end
         
-        -- Modem found!
+        -- Modem found! Clear all content lines first
         term.setBackgroundColor(colors.black)
-        term.setCursorPos(contentX, contentY + 2)
-        term.clearLine()
+        for i = 2, 4 do
+            term.setCursorPos(contentX, contentY + i)
+            term.clearLine()
+        end
+        
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Modem Found!")
-        term.setCursorPos(contentX, contentY + 4)
-        term.clearLine()
-        term.setCursorPos(contentX, contentY + 4)
-        term.write("     ✓     ")
+        term.setCursorPos(contentX + 5, contentY + 4)
+        term.write("✓")
         sleep(1)
     else
-        -- Already has modem
+        -- Already has modem - clear content area first
         term.setBackgroundColor(colors.black)
-        term.setCursorPos(contentX, contentY + 2)
-        term.clearLine()
+        for i = 2, 4 do
+            term.setCursorPos(contentX, contentY + i)
+            term.clearLine()
+        end
+        
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Modem Detected")
-        term.setCursorPos(contentX, contentY + 4)
-        term.clearLine()
-        term.setCursorPos(contentX, contentY + 4)
-        term.write("     ✓     ")
+        term.setCursorPos(contentX + 5, contentY + 4)
+        term.write("✓")
         sleep(0.5)
     end
     
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
-    -- Clear previous content
+    -- Clear ALL content lines in the panel
     term.setBackgroundColor(colors.black)
-    for i = 0, 4 do
+    for i = 0, 5 do
         term.setCursorPos(contentX, contentY + i)
         term.clearLine()
     end
+    
+    -- Redraw ID
+    term.setTextColor(colors.lightGray)
+    term.setCursorPos(contentX, contentY)
+    term.write(string.format("ID: %d", os.getComputerID()))
     
     -- Write new status
     term.setTextColor(colors.orange)
@@ -866,8 +873,17 @@ function app.startupSequence()
     -- Start connection attempt in parallel with animation
     parallel.waitForAny(
         function()
-            -- Connection attempt (suppress output by redirecting terminal)
-            local oldTerm = term.redirect(term.current())
+            -- Connection attempt (suppress ALL output)
+            local dummyTerm = {}
+            for k, v in pairs(term.current()) do
+                if type(v) == "function" then
+                    dummyTerm[k] = function() end
+                else
+                    dummyTerm[k] = v
+                end
+            end
+            
+            local oldTerm = term.redirect(dummyTerm)
             
             local c = getClient()
             if c then
@@ -878,9 +894,7 @@ function app.startupSequence()
                 end
             end
             
-            if oldTerm then
-                term.redirect(oldTerm)
-            end
+            term.redirect(oldTerm)
         end,
         function()
             -- Animation loop - ignore all key presses
@@ -906,28 +920,32 @@ function app.startupSequence()
     
     -- Update final status
     if connected then
+        -- Clear content area
         term.setBackgroundColor(colors.black)
-        term.setCursorPos(contentX, contentY + 2)
-        term.clearLine()
+        for i = 2, 4 do
+            term.setCursorPos(contentX, contentY + i)
+            term.clearLine()
+        end
+        
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Connected!")
-        term.setCursorPos(contentX, contentY + 4)
-        term.clearLine()
-        term.setCursorPos(contentX, contentY + 4)
-        term.write("     ✓     ")
+        term.setCursorPos(contentX + 5, contentY + 4)
+        term.write("✓")
         sleep(1.5)
     else
+        -- Clear content area
         term.setBackgroundColor(colors.black)
-        term.setCursorPos(contentX, contentY + 2)
-        term.clearLine()
+        for i = 2, 4 do
+            term.setCursorPos(contentX, contentY + i)
+            term.clearLine()
+        end
+        
         term.setTextColor(colors.red)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Link Failed")
-        term.setCursorPos(contentX, contentY + 4)
-        term.clearLine()
-        term.setCursorPos(contentX, contentY + 4)
-        term.write("     ✗     ")
+        term.setCursorPos(contentX + 5, contentY + 4)
+        term.write("✗")
         sleep(2)
     end
     
