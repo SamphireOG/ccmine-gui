@@ -792,6 +792,8 @@ function app.startupSequence()
                     term.setBackgroundColor(colors.black)
                     term.setTextColor(colors.blue)
                     term.setCursorPos(contentX, contentY + 4)
+                    term.clearLine()
+                    term.setCursorPos(contentX, contentY + 4)
                     term.write(rotatingCircle[frameIndex])
                     break
                 elseif event == "peripheral" or event == "peripheral_attach" then
@@ -805,30 +807,43 @@ function app.startupSequence()
         
         -- Modem found!
         term.setBackgroundColor(colors.black)
+        term.setCursorPos(contentX, contentY + 2)
+        term.clearLine()
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Modem Found!")
+        term.setCursorPos(contentX, contentY + 4)
+        term.clearLine()
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✓     ")
         sleep(1)
     else
         -- Already has modem
         term.setBackgroundColor(colors.black)
+        term.setCursorPos(contentX, contentY + 2)
+        term.clearLine()
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Modem Detected")
+        term.setCursorPos(contentX, contentY + 4)
+        term.clearLine()
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✓     ")
         sleep(0.5)
     end
     
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
+    -- Clear previous content
     term.setBackgroundColor(colors.black)
+    for i = 0, 4 do
+        term.setCursorPos(contentX, contentY + i)
+        term.clearLine()
+    end
+    
+    -- Write new status
     term.setTextColor(colors.orange)
     term.setCursorPos(contentX, contentY + 2)
     term.write("Linking to Coordinator")
-    term.setCursorPos(contentX, contentY + 4)
-    term.write(string.rep(" ", 11))
     sleep(0.3)
     
     -- Attempt connection with loading circle animation (no skip)
@@ -851,7 +866,9 @@ function app.startupSequence()
     -- Start connection attempt in parallel with animation
     parallel.waitForAny(
         function()
-            -- Connection attempt
+            -- Connection attempt (suppress output by redirecting terminal)
+            local oldTerm = term.redirect(term.current())
+            
             local c = getClient()
             if c then
                 connected = c.init(os.getComputerLabel())
@@ -859,6 +876,10 @@ function app.startupSequence()
                     app.state.networkEnabled = true
                     app.refreshNetworkStatus()
                 end
+            end
+            
+            if oldTerm then
+                term.redirect(oldTerm)
             end
         end,
         function()
@@ -873,6 +894,8 @@ function app.startupSequence()
                         term.setBackgroundColor(colors.black)
                         term.setTextColor(colors.blue)
                         term.setCursorPos(contentX, contentY + 4)
+                        term.clearLine()
+                        term.setCursorPos(contentX, contentY + 4)
                         term.write(rotatingCircle[frameIndex])
                         break
                     end
@@ -884,17 +907,25 @@ function app.startupSequence()
     -- Update final status
     if connected then
         term.setBackgroundColor(colors.black)
+        term.setCursorPos(contentX, contentY + 2)
+        term.clearLine()
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Connected!")
+        term.setCursorPos(contentX, contentY + 4)
+        term.clearLine()
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✓     ")
         sleep(1.5)
     else
         term.setBackgroundColor(colors.black)
+        term.setCursorPos(contentX, contentY + 2)
+        term.clearLine()
         term.setTextColor(colors.red)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Link Failed")
+        term.setCursorPos(contentX, contentY + 4)
+        term.clearLine()
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✗     ")
         sleep(2)
