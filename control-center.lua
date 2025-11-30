@@ -461,20 +461,53 @@ function control.showCreateProject()
         components.createLabel("nameLbl", formX, formY, "Name:")
         local nameInput = components.createTextInput("name", formX, formY + 1, w - 4, "North Mine")
         
-        -- Project Type
+        -- Project Type (with buttons)
         components.createLabel("typeLbl", formX, formY + 3, "Type:")
-        components.createLabel("type1", formX, formY + 4, "1=Branch 2=Quarry")
-        components.createLabel("type2", formX, formY + 5, "3=Strip Mine")
-        local typeInput = components.createTextInput("type", formX, formY + 6, 4, "1")
+        
+        local selectedType = "branch_mine" -- Default selection
+        
+        -- Type buttons
+        local btnW = 7
+        local typeY = formY + 4
+        
+        local branchBtn = components.createButton("typeBranch", formX, typeY, btnW, 1, "Branch",
+            function()
+                selectedType = "branch_mine"
+                branchBtn.bgColor = gui.getColor("primary")
+                quarryBtn.bgColor = colors.gray
+                stripBtn.bgColor = colors.gray
+                gui.draw()
+            end)
+        branchBtn.bgColor = gui.getColor("primary")
+        
+        local quarryBtn = components.createButton("typeQuarry", formX + btnW + 1, typeY, btnW, 1, "Quarry",
+            function()
+                selectedType = "quarry"
+                branchBtn.bgColor = colors.gray
+                quarryBtn.bgColor = gui.getColor("primary")
+                stripBtn.bgColor = colors.gray
+                gui.draw()
+            end)
+        quarryBtn.bgColor = colors.gray
+        
+        local stripBtn = components.createButton("typeStrip", formX + (btnW + 1) * 2, typeY, btnW, 1, "Strip",
+            function()
+                selectedType = "strip_mine"
+                branchBtn.bgColor = colors.gray
+                quarryBtn.bgColor = colors.gray
+                stripBtn.bgColor = gui.getColor("primary")
+                gui.draw()
+            end)
+        stripBtn.bgColor = colors.gray
         
         -- Starting Position (compact)
-        components.createLabel("posLbl", formX, formY + 8, "Start Pos:")
-        components.createLabel("xLbl", formX, formY + 9, "X:")
-        local xInput = components.createTextInput("x", formX + 3, formY + 9, 6, "0")
-        components.createLabel("yLbl", formX + 11, formY + 9, "Y:")
-        local yInput = components.createTextInput("y", formX + 14, formY + 9, 5, "11")
-        components.createLabel("zLbl", formX, formY + 10, "Z:")
-        local zInput = components.createTextInput("z", formX + 3, formY + 10, 6, "0")
+        components.createLabel("posLbl", formX, formY + 6, "Start Pos:")
+        components.createLabel("xLbl", formX, formY + 7, "X:")
+        local xInput = components.createTextInput("x", formX + 3, formY + 7, 6, "0")
+        components.createLabel("yLbl", formX + 11, formY + 7, "Y:")
+        local yInput = components.createTextInput("y", formX + 14, formY + 7, 5, "11")
+        components.createLabel("zLbl", formX, formY + 8, "Z:")
+        local zInput = components.createTextInput("z", formX + 3, formY + 8, 6, "0")
         
         -- Buttons
         local btnW = math.floor((w - 5) / 2)
@@ -482,8 +515,6 @@ function control.showCreateProject()
         
         local createBtn = components.createButton("create", 2, btnY, btnW, 2, "Create",
             function()
-                local typeMap = { ["1"] = "branch_mine", ["2"] = "quarry", ["3"] = "strip_mine" }
-                local projectType = typeMap[typeInput.value] or "branch_mine"
                 local name = nameInput.value ~= "" and nameInput.value or "New Project"
                 
                 local config = { mainTunnelLength = 64, sideTunnelLength = 32 }
@@ -493,7 +524,7 @@ function control.showCreateProject()
                     z = tonumber(zInput.value) or 0
                 }
                 
-                local projectId = projectManager.create(projectType, name, config, startPos)
+                local projectId = projectManager.create(selectedType, name, config, startPos)
                 gui.notify("Project created: " .. name, colors.white, colors.green, 2)
                 control.showProjectList()
             end)
