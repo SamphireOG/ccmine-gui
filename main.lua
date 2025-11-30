@@ -765,60 +765,16 @@ function app.startupSequence()
         term.setCursorPos(contentX, contentY + 2)
         term.write("Waiting for Modem")
         
-        -- Wait for modem to be attached with loading circle animation
-        local circleFrames = {
-            "    o o o    ",
-            "   o   o     ",
-            "  o     o    ",
-            "  o      o   ",
-            " o        o  ",
-            "o          o ",
-            "o          o ",
-            " o        o  ",
-            "  o      o   ",
-            "  o     o    ",
-            "   o   o     ",
-            "    o o      "
-        }
-        
-        -- Better circle animation using segments
-        local circleSegments = {
-            "   .....   ",
-            "  .     .  ",
-            " .       . ",
-            ".         .",
-            "           ",
-            ".         .",
-            " .       . ",
-            "  .     .  ",
-        }
-        
-        -- Rotating segments
-        local loadingFrames = {
-            "     o     ",
-            "    ooo    ",
-            "   o   o   ",
-            "  o     o  ",
-            " o       o ",
-            "o         o",
-            "           ",
-            "o         o",
-            " o       o ",
-            "  o     o  ",
-            "   o   o   ",
-            "    ooo    ",
-        }
-        
-        -- Simple rotating circle
+        -- Circular loading animation (8 positions around a circle)
         local rotatingCircle = {
-            "    ●      ",
-            "   ●       ",
-            "  ●        ",
-            " ●         ",
-            "●          ",
-            " ●         ",
-            "  ●        ",
-            "   ●       ",
+            "   o      ",  -- top
+            "  o o     ",  -- top-right
+            "  o   o   ",  -- right
+            "   o  o   ",  -- bottom-right
+            "    o     ",  -- bottom
+            "   o  o   ",  -- bottom-left
+            "  o   o   ",  -- left
+            "  o o     ",  -- top-left
         }
         
         local frameIndex = 1
