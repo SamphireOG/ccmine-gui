@@ -631,16 +631,9 @@ function app.showLoadingScreen()
     -- Loading spinner (will be updated)
     local spinnerLabel = components.createLabel("spinner", panelX + 2, 10, "")
     
-    -- Modem check
-    local modem = peripheral.find("modem")
-    if not modem then
-        local noModemLabel = components.createLabel("nomodem", panelX + 2, 11, "No wireless modem found!")
-        noModemLabel.fgColor = gui.getColor("error")
-    else
-        -- Skip hint
-        local skipLabel = components.createLabel("skip", panelX + 2, 11, "Press any key to skip")
-        skipLabel.fgColor = colors.gray
-    end
+    -- Skip hint
+    local skipLabel = components.createLabel("skip", panelX + 2, 11, "Press any key to skip")
+    skipLabel.fgColor = colors.gray
     
     gui.draw()
 end
@@ -711,14 +704,77 @@ function app.startupSequence()
     -- Show loading screen
     app.showLoadingScreen()
     
-    -- Check for modem
+    -- Wait for modem with animation
     local modem = peripheral.find("modem")
+    local skippedModemWait = false
+    
     if not modem then
-        sleep(2)
-        app.state.networkEnabled = false
-        app.createMainScreen()
-        return
+        local statusLabel = gui.getComponent("status")
+        local spinnerLabel = gui.getComponent("spinner")
+        
+        if statusLabel then
+            statusLabel.text = "Waiting for wireless modem..."
+            statusLabel.fgColor = gui.getColor("error")
+        end
+        
+        gui.draw()
+        
+        -- Wait for modem to be attached
+        local startTime = os.clock()
+        local spinner = {"|", "/", "-", "\\"}
+        local spinnerIndex = 1
+        
+        while not modem and not skippedModemWait do
+            -- Check for key press to skip
+            local timer = os.startTimer(0.2)
+            local event = os.pullEvent()
+            
+            if event == "timer" then
+                -- Update spinner
+                spinnerIndex = spinnerIndex % #spinner + 1
+                if spinnerLabel then
+                    spinnerLabel.text = spinner[spinnerIndex] .. " Please attach a wireless modem"
+                end
+                gui.draw()
+            elseif event == "key" or event == "char" then
+                skippedModemWait = true
+            elseif event == "peripheral" then
+                -- Check if modem was attached
+                modem = peripheral.find("modem")
+            end
+        end
+        
+        if skippedModemWait then
+            if statusLabel then
+                statusLabel.text = "Skipped - No modem"
+                statusLabel.fgColor = colors.gray
+            end
+            if spinnerLabel then
+                spinnerLabel.text = "Starting in standalone mode..."
+            end
+            gui.draw()
+            sleep(1)
+            app.state.networkEnabled = false
+            app.createMainScreen()
+            return
+        end
+        
+        -- Modem found!
+        if statusLabel then
+            statusLabel.text = "Modem found!"
+            statusLabel.fgColor = gui.getColor("success")
+        end
+        gui.draw()
+        sleep(0.5)
     end
+    
+    -- Now attempt coordinator connection
+    local statusLabel = gui.getComponent("status")
+    if statusLabel then
+        statusLabel.text = "Searching for coordinator..."
+        statusLabel.fgColor = gui.getColor("warning")
+    end
+    gui.draw()
     
     -- Attempt auto-connect
     local connected, skipped = app.animateLoading(5, function()
@@ -734,7 +790,7 @@ function app.startupSequence()
     end)
     
     -- Update status
-    local statusLabel = gui.getComponent("status")
+    statusLabel = gui.getComponent("status")
     local spinnerLabel = gui.getComponent("spinner")
     
     if skipped then
