@@ -584,6 +584,10 @@ function control.run()
     print("Coordinator started successfully!")
     sleep(1)
     
+    -- Clear screen before showing GUI
+    term.clear()
+    term.setCursorPos(1, 1)
+    
     -- Show dashboard
     control.showDashboard()
     
