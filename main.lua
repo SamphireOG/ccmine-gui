@@ -702,22 +702,55 @@ end
 
 function app.startupSequence()
     -- Show loading screen
-    app.showLoadingScreen()
+    gui.clearComponents()
+    gui.clear()
+    
+    local w, h = layouts.getScreenSize()
+    
+    -- Title with Turtle ID
+    local turtleLabel = os.getComputerLabel() or ("Turtle-" .. os.getComputerID())
+    gui.centerText(turtleLabel, 1, gui.getColor("primary"), colors.white)
+    
+    -- Loading panel
+    local panelW = math.min(40, w - 4)
+    local panelX = layouts.centerHorizontally(panelW)
+    local panel = components.createPanel("loading", panelX, 4, panelW, 9, "Network Connection")
+    panel.borderColor = gui.getColor("border")
+    
+    -- Turtle info
+    local idLabel = components.createLabel("turtleId", panelX + 2, 6, 
+        string.format("ID: %d", os.getComputerID()))
+    idLabel.fgColor = colors.lightGray
+    
+    -- Status label
+    local statusLabel = components.createLabel("status", panelX + 2, 8, "Checking for modem...")
+    statusLabel.fgColor = gui.getColor("warning")
+    
+    -- Loading spinner (will be updated)
+    local spinnerLabel = components.createLabel("spinner", panelX + 2, 10, "")
+    
+    -- Skip hint
+    local skipLabel = components.createLabel("skip", panelX + 2, 11, "Press any key to skip")
+    skipLabel.fgColor = colors.gray
+    
+    gui.draw()
+    sleep(0.5)  -- Brief pause so user can see the screen
     
     -- Wait for modem with animation
     local modem = peripheral.find("modem")
     local skippedModemWait = false
     
     if not modem then
-        local statusLabel = gui.getComponent("status")
-        local spinnerLabel = gui.getComponent("spinner")
+        statusLabel = gui.getComponent("status")
+        spinnerLabel = gui.getComponent("spinner")
         
         if statusLabel then
-            statusLabel.text = "Waiting for wireless modem..."
+            statusLabel.text = "NO MODEM - Waiting..."
             statusLabel.fgColor = gui.getColor("error")
         end
         
         gui.draw()
+        sleep(0.5)
         
         -- Wait for modem to be attached
         local startTime = os.clock()
@@ -760,8 +793,22 @@ function app.startupSequence()
         end
         
         -- Modem found!
+        statusLabel = gui.getComponent("status")
         if statusLabel then
-            statusLabel.text = "Modem found!"
+            statusLabel.text = "MODEM ATTACHED!"
+            statusLabel.fgColor = gui.getColor("success")
+        end
+        spinnerLabel = gui.getComponent("spinner")
+        if spinnerLabel then
+            spinnerLabel.text = ""
+        end
+        gui.draw()
+        sleep(1)
+    else
+        -- Already has modem
+        statusLabel = gui.getComponent("status")
+        if statusLabel then
+            statusLabel.text = "Modem detected!"
             statusLabel.fgColor = gui.getColor("success")
         end
         gui.draw()
@@ -769,7 +816,7 @@ function app.startupSequence()
     end
     
     -- Now attempt coordinator connection
-    local statusLabel = gui.getComponent("status")
+    statusLabel = gui.getComponent("status")
     if statusLabel then
         statusLabel.text = "Searching for coordinator..."
         statusLabel.fgColor = gui.getColor("warning")
