@@ -835,17 +835,11 @@ function app.startupSequence()
     end
     
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
-    -- Completely redraw the entire panel to clear any stray output
+    -- Clear content area only
     term.setBackgroundColor(colors.black)
-    
-    -- Clear the entire panel interior
-    for y = panelY + 1, panelY + panelH - 1 do
-        term.setCursorPos(panelX + 1, y)
-        if y == panelY + panelH - 1 then
-            term.write(string.rep("-", panelW))
-        else
-            term.write("|" .. string.rep(" ", panelW - 2) .. "|")
-        end
+    for i = 0, 5 do
+        term.setCursorPos(contentX, contentY + i)
+        term.clearLine()
     end
     
     -- Redraw ID
@@ -877,6 +871,8 @@ function app.startupSequence()
     local frameIndex = 1
     
     -- Start connection attempt in parallel with animation
+    local realTerm = term.current()
+    
     parallel.waitForAny(
         function()
             -- Connection attempt (suppress ALL output by creating invisible window)
@@ -887,8 +883,8 @@ function app.startupSequence()
             
             -- Create off-screen window to catch any terminal output
             local w, h = term.getSize()
-            local offscreenWindow = window.create(term.current(), 1, h + 100, w, h, false)
-            local oldTerm = term.redirect(offscreenWindow)
+            local offscreenWindow = window.create(realTerm, 1, h + 100, w, h, false)
+            term.redirect(offscreenWindow)
             
             local c = getClient()
             if c then
@@ -899,12 +895,14 @@ function app.startupSequence()
                 end
             end
             
-            term.redirect(oldTerm)
+            term.redirect(realTerm)
             print = oldPrint
             write = oldWrite
         end,
         function()
-            -- Animation loop - ignore all key presses
+            -- Animation loop - ignore all key presses, use real terminal
+            term.redirect(realTerm)
+            
             while not connected do
                 local timer = os.startTimer(0.15)
                 repeat
