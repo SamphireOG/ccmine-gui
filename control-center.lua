@@ -470,39 +470,30 @@ function control.showCreateProject()
         local btnW = 7
         local typeY = formY + 4
         
-        local branchBtn = components.createButton("typeBranch", formX, typeY, btnW, 1, "Branch", nil)
-        local quarryBtn = components.createButton("typeQuarry", formX + btnW + 1, typeY, btnW, 1, "Quarry", nil)
-        local stripBtn = components.createButton("typeStrip", formX + (btnW + 1) * 2, typeY, btnW, 1, "Strip", nil)
+        -- Function to update button colors
+        local function updateTypeButtons(selected)
+            selectedType = selected
+            local branchBtn = gui.getComponent("typeBranch")
+            local quarryBtn = gui.getComponent("typeQuarry")
+            local stripBtn = gui.getComponent("typeStrip")
+            
+            if branchBtn then branchBtn.bgColor = (selected == "branch_mine") and gui.getColor("primary") or colors.gray end
+            if quarryBtn then quarryBtn.bgColor = (selected == "quarry") and gui.getColor("primary") or colors.gray end
+            if stripBtn then stripBtn.bgColor = (selected == "strip_mine") and gui.getColor("primary") or colors.gray end
+            gui.draw()
+        end
         
-        -- Set initial colors
+        local branchBtn = components.createButton("typeBranch", formX, typeY, btnW, 1, "Branch",
+            function() updateTypeButtons("branch_mine") end)
         branchBtn.bgColor = gui.getColor("primary")
+        
+        local quarryBtn = components.createButton("typeQuarry", formX + btnW + 1, typeY, btnW, 1, "Quarry",
+            function() updateTypeButtons("quarry") end)
         quarryBtn.bgColor = colors.gray
+        
+        local stripBtn = components.createButton("typeStrip", formX + (btnW + 1) * 2, typeY, btnW, 1, "Strip",
+            function() updateTypeButtons("strip_mine") end)
         stripBtn.bgColor = colors.gray
-        
-        -- Now add click handlers
-        branchBtn.onClick = function()
-            selectedType = "branch_mine"
-            branchBtn.bgColor = gui.getColor("primary")
-            quarryBtn.bgColor = colors.gray
-            stripBtn.bgColor = colors.gray
-            gui.draw()
-        end
-        
-        quarryBtn.onClick = function()
-            selectedType = "quarry"
-            branchBtn.bgColor = colors.gray
-            quarryBtn.bgColor = gui.getColor("primary")
-            stripBtn.bgColor = colors.gray
-            gui.draw()
-        end
-        
-        stripBtn.onClick = function()
-            selectedType = "strip_mine"
-            branchBtn.bgColor = colors.gray
-            quarryBtn.bgColor = colors.gray
-            stripBtn.bgColor = gui.getColor("primary")
-            gui.draw()
-        end
         
         -- Starting Position (compact)
         components.createLabel("posLbl", formX, formY + 6, "Start Pos:")
