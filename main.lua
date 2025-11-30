@@ -765,16 +765,16 @@ function app.startupSequence()
         term.setCursorPos(contentX, contentY + 2)
         term.write("Waiting for Modem")
         
-        -- Circular loading animation (8 positions around a circle)
+        -- Circular loading animation (single dot rotating in circle)
         local rotatingCircle = {
-            "   o      ",  -- top
-            "  o o     ",  -- top-right
-            "  o   o   ",  -- right
-            "   o  o   ",  -- bottom-right
-            "    o     ",  -- bottom
-            "   o  o   ",  -- bottom-left
-            "  o   o   ",  -- left
-            "  o o     ",  -- top-left
+            "   o     ",  -- top
+            "  o      ",  -- top-right
+            " o       ",  -- right
+            "o        ",  -- bottom-right
+            " o       ",  -- bottom
+            "  o      ",  -- bottom-left
+            "   o     ",  -- left
+            "    o    ",  -- top-left
         }
         
         local frameIndex = 1
@@ -816,7 +816,7 @@ function app.startupSequence()
         term.setCursorPos(contentX, contentY + 2)
         term.write("Modem Found!")
         term.setCursorPos(contentX + 5, contentY + 4)
-        term.write("✓")
+        term.write("[OK]")
         sleep(1)
     else
         -- Already has modem - clear content area first
@@ -830,16 +830,22 @@ function app.startupSequence()
         term.setCursorPos(contentX, contentY + 2)
         term.write("Modem Detected")
         term.setCursorPos(contentX + 5, contentY + 4)
-        term.write("✓")
+        term.write("[OK]")
         sleep(0.5)
     end
     
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
-    -- Clear ALL content lines in the panel
+    -- Completely redraw the entire panel to clear any stray output
     term.setBackgroundColor(colors.black)
-    for i = 0, 5 do
-        term.setCursorPos(contentX, contentY + i)
-        term.clearLine()
+    
+    -- Clear the entire panel interior
+    for y = panelY + 1, panelY + panelH - 1 do
+        term.setCursorPos(panelX + 1, y)
+        if y == panelY + panelH - 1 then
+            term.write(string.rep("-", panelW))
+        else
+            term.write("|" .. string.rep(" ", panelW - 2) .. "|")
+        end
     end
     
     -- Redraw ID
@@ -858,14 +864,14 @@ function app.startupSequence()
     
     -- Rotating circle animation
     local rotatingCircle = {
-        "    ●      ",
-        "   ●       ",
-        "  ●        ",
-        " ●         ",
-        "●          ",
-        " ●         ",
-        "  ●        ",
-        "   ●       ",
+        "   o     ",  -- top
+        "  o      ",  -- top-right
+        " o       ",  -- right
+        "o        ",  -- bottom-right
+        " o       ",  -- bottom
+        "  o      ",  -- bottom-left
+        "   o     ",  -- left
+        "    o    ",  -- top-left
     }
     
     local frameIndex = 1
@@ -873,17 +879,16 @@ function app.startupSequence()
     -- Start connection attempt in parallel with animation
     parallel.waitForAny(
         function()
-            -- Connection attempt (suppress ALL output)
-            local dummyTerm = {}
-            for k, v in pairs(term.current()) do
-                if type(v) == "function" then
-                    dummyTerm[k] = function() end
-                else
-                    dummyTerm[k] = v
-                end
-            end
+            -- Connection attempt (suppress ALL output by creating invisible window)
+            local oldPrint = print
+            local oldWrite = write
+            print = function() end
+            write = function() end
             
-            local oldTerm = term.redirect(dummyTerm)
+            -- Create off-screen window to catch any terminal output
+            local w, h = term.getSize()
+            local offscreenWindow = window.create(term.current(), 1, h + 100, w, h, false)
+            local oldTerm = term.redirect(offscreenWindow)
             
             local c = getClient()
             if c then
@@ -895,6 +900,8 @@ function app.startupSequence()
             end
             
             term.redirect(oldTerm)
+            print = oldPrint
+            write = oldWrite
         end,
         function()
             -- Animation loop - ignore all key presses
@@ -930,8 +937,8 @@ function app.startupSequence()
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Connected!")
-        term.setCursorPos(contentX + 5, contentY + 4)
-        term.write("✓")
+        term.setCursorPos(contentX + 4, contentY + 4)
+        term.write("[OK]")
         sleep(1.5)
     else
         -- Clear content area
@@ -944,8 +951,8 @@ function app.startupSequence()
         term.setTextColor(colors.red)
         term.setCursorPos(contentX, contentY + 2)
         term.write("Link Failed")
-        term.setCursorPos(contentX + 5, contentY + 4)
-        term.write("✗")
+        term.setCursorPos(contentX + 3, contentY + 4)
+        term.write("[ERROR]")
         sleep(2)
     end
     
