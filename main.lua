@@ -727,9 +727,9 @@ function app.startupSequence()
         while not modem and not skippedModemWait do
             -- Check for key press to skip
             local timer = os.startTimer(0.2)
-            local event = os.pullEvent()
+            local event, p1, p2, p3 = os.pullEvent()
             
-            if event == "timer" then
+            if event == "timer" and p1 == timer then
                 -- Update spinner
                 spinnerIndex = spinnerIndex % #spinner + 1
                 if spinnerLabel then
@@ -738,7 +738,7 @@ function app.startupSequence()
                 gui.draw()
             elseif event == "key" or event == "char" then
                 skippedModemWait = true
-            elseif event == "peripheral" then
+            elseif event == "peripheral" or event == "peripheral_attach" then
                 -- Check if modem was attached
                 modem = peripheral.find("modem")
             end
