@@ -480,19 +480,68 @@ end
 -- ========== NETWORK FUNCTIONS ==========
 
 function app.enableNetwork()
-    gui.notify("Enabling network...", colors.white, gui.getColor("primary"), 2)
+    -- Show loading screen
+    gui.clearComponents()
     
-    local success = client.init(os.getComputerLabel())
+    local w, h = layouts.getScreenSize()
     
-    if success then
-        app.state.networkEnabled = true
-        app.refreshNetworkStatus()
-        gui.notify("Network enabled!", colors.white, gui.getColor("success"), 2)
+    gui.centerText("Network Connection", 1, gui.getColor("primary"), colors.white)
+    
+    local panelW = math.min(40, w - 4)
+    local panelX = layouts.centerHorizontally(panelW)
+    local panel = components.createPanel("connecting", panelX, 6, panelW, 6, "Connecting")
+    panel.borderColor = gui.getColor("border")
+    
+    local statusLabel = components.createLabel("connStatus", panelX + 2, 8, "Searching for coordinator...")
+    statusLabel.fgColor = gui.getColor("warning")
+    
+    local spinnerLabel = components.createLabel("connSpinner", panelX + 2, 10, "")
+    
+    gui.draw()
+    
+    -- Attempt connection with animation
+    local connected, skipped = app.animateLoading(5, function()
+        local success = client.init(os.getComputerLabel())
+        if success then
+            app.state.networkEnabled = true
+            app.refreshNetworkStatus()
+        end
+        return success
+    end)
+    
+    -- Show result
+    statusLabel = gui.getComponent("connStatus")
+    spinnerLabel = gui.getComponent("connSpinner")
+    
+    if skipped then
+        if statusLabel then
+            statusLabel.text = "Connection cancelled"
+            statusLabel.fgColor = colors.gray
+        end
+        if spinnerLabel then
+            spinnerLabel.text = "Skipped"
+        end
+    elseif connected then
+        if statusLabel then
+            statusLabel.text = "Connected successfully!"
+            statusLabel.fgColor = gui.getColor("success")
+        end
+        if spinnerLabel then
+            spinnerLabel.text = "Ready!"
+        end
     else
-        gui.notify("Network failed!", colors.white, gui.getColor("error"), 2)
+        if statusLabel then
+            statusLabel.text = "Connection failed"
+            statusLabel.fgColor = gui.getColor("error")
+        end
+        if spinnerLabel then
+            spinnerLabel.text = "No coordinator found"
+        end
     end
     
-    sleep(2)
+    gui.draw()
+    sleep(1.5)
+    
     app.showNetworkScreen()
 end
 
@@ -527,6 +576,174 @@ function app.exit()
     end
 end
 
+-- ========== LOADING SCREEN ==========
+
+function app.showLoadingScreen()
+    gui.clearComponents()
+    
+    local w, h = layouts.getScreenSize()
+    
+    -- Title with Turtle ID
+    local turtleLabel = os.getComputerLabel() or ("Turtle-" .. os.getComputerID())
+    gui.centerText(turtleLabel, 1, gui.getColor("primary"), colors.white)
+    
+    -- Loading panel
+    local panelW = math.min(40, w - 4)
+    local panelX = layouts.centerHorizontally(panelW)
+    local panel = components.createPanel("loading", panelX, 4, panelW, 9, "Network Connection")
+    panel.borderColor = gui.getColor("border")
+    
+    -- Turtle info
+    local idLabel = components.createLabel("turtleId", panelX + 2, 6, 
+        string.format("ID: %d", os.getComputerID()))
+    idLabel.fgColor = colors.lightGray
+    
+    -- Status label
+    local statusLabel = components.createLabel("status", panelX + 2, 8, "Searching for coordinator...")
+    statusLabel.fgColor = gui.getColor("warning")
+    
+    -- Loading spinner (will be updated)
+    local spinnerLabel = components.createLabel("spinner", panelX + 2, 10, "")
+    
+    -- Modem check
+    local modem = peripheral.find("modem")
+    if not modem then
+        local noModemLabel = components.createLabel("nomodem", panelX + 2, 11, "No wireless modem found!")
+        noModemLabel.fgColor = gui.getColor("error")
+    else
+        -- Skip hint
+        local skipLabel = components.createLabel("skip", panelX + 2, 11, "Press any key to skip")
+        skipLabel.fgColor = colors.gray
+    end
+    
+    gui.draw()
+end
+
+function app.animateLoading(duration, callback)
+    local frames = {".", "..", "...", "....", ".....", "......"}
+    local spinnerFrames = {"|", "/", "-", "\\"}
+    local frameIndex = 1
+    local spinnerIndex = 1
+    local startTime = os.clock()
+    local result = nil
+    local done = false
+    local skipped = false
+    
+    -- Run callback in parallel with animation and key detection
+    parallel.waitForAny(
+        function()
+            -- Animation loop
+            while not done and not skipped do
+                local elapsed = os.clock() - startTime
+                if elapsed > duration then
+                    break
+                end
+                
+                -- Update spinner with both dot animation and spinner
+                local spinner = gui.getComponent("spinner")
+                local connSpinner = gui.getComponent("connSpinner")
+                
+                if spinner then
+                    spinner.text = spinnerFrames[spinnerIndex] .. " " .. frames[frameIndex]
+                    gui.draw()
+                end
+                
+                if connSpinner then
+                    connSpinner.text = spinnerFrames[spinnerIndex] .. " " .. frames[frameIndex]
+                    gui.draw()
+                end
+                
+                frameIndex = frameIndex + 1
+                if frameIndex > #frames then
+                    frameIndex = 1
+                end
+                
+                spinnerIndex = spinnerIndex + 1
+                if spinnerIndex > #spinnerFrames then
+                    spinnerIndex = 1
+                end
+                
+                sleep(0.2)
+            end
+        end,
+        function()
+            -- Connection attempt
+            result = callback()
+            done = true
+        end,
+        function()
+            -- Skip on any key press
+            os.pullEvent("key")
+            skipped = true
+        end
+    )
+    
+    return result, skipped
+end
+
+function app.startupSequence()
+    -- Show loading screen
+    app.showLoadingScreen()
+    
+    -- Check for modem
+    local modem = peripheral.find("modem")
+    if not modem then
+        sleep(2)
+        app.state.networkEnabled = false
+        app.createMainScreen()
+        return
+    end
+    
+    -- Attempt auto-connect
+    local connected, skipped = app.animateLoading(5, function()
+        local success = client.init(os.getComputerLabel())
+        if success then
+            app.state.networkEnabled = true
+            app.refreshNetworkStatus()
+        end
+        return success
+    end)
+    
+    -- Update status
+    local statusLabel = gui.getComponent("status")
+    local spinnerLabel = gui.getComponent("spinner")
+    
+    if skipped then
+        if statusLabel then
+            statusLabel.text = "Skipped"
+            statusLabel.fgColor = colors.gray
+        end
+        if spinnerLabel then
+            spinnerLabel.text = "Starting in standalone mode..."
+        end
+        gui.draw()
+        sleep(1)
+    elseif connected then
+        if statusLabel then
+            statusLabel.text = "Connected to coordinator!"
+            statusLabel.fgColor = gui.getColor("success")
+        end
+        if spinnerLabel then
+            spinnerLabel.text = "Ready!"
+        end
+        gui.draw()
+        sleep(1)
+    else
+        if statusLabel then
+            statusLabel.text = "No coordinator found"
+            statusLabel.fgColor = gui.getColor("warning")
+        end
+        if spinnerLabel then
+            spinnerLabel.text = "Running in standalone mode"
+        end
+        gui.draw()
+        sleep(1.5)
+    end
+    
+    -- Show main screen
+    app.createMainScreen()
+end
+
 -- ========== MAIN ==========
 
 function app.run()
@@ -534,17 +751,8 @@ function app.run()
     gui.init()
     gui.setTheme("default")
     
-    -- Check for modem
-    local modem = peripheral.find("modem")
-    if modem then
-        print("Wireless modem detected!")
-        print("Network features available.")
-        sleep(1)
-    end
-    
-    -- Show main screen
-    app.state.currentScreen = "main"
-    app.createMainScreen()
+    -- Run startup sequence with loading screen
+    app.startupSequence()
     
     -- Event loop
     while true do
