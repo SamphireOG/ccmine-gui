@@ -67,8 +67,8 @@ function control.showDashboard()
         components.createLabel("totalProjects", 3, 7,
             string.format("Projects: %d active", stats.activeProjects))
         
-        -- Buttons
-        local btnY = 10
+        -- Main action buttons (moved down, removed New Project)
+        local btnY = 11
         local btnW = math.floor((w - 4) / 2)
         
         local turtlesBtn = components.createButton("turtlesBtn", 2, btnY, btnW, 2, "Turtles",
@@ -79,10 +79,7 @@ function control.showDashboard()
             function() control.showProjectList() end)
         projectsBtn.bgColor = gui.getColor("primary")
         
-        local createBtn = components.createButton("createBtn", 2, btnY + 3, w - 3, 2, "New Project",
-            function() control.showCreateProject() end)
-        createBtn.bgColor = gui.getColor("success")
-        
+        -- Exit button
         local exitBtn = components.createButton("exit", 2, h - 2, w - 3, 2, "Exit",
             function() control.exit() end)
         exitBtn.bgColor = gui.getColor("error")
