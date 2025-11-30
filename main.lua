@@ -748,6 +748,7 @@ function app.startupSequence()
     local contentY = panelY + 2
     
     -- ID label
+    term.setBackgroundColor(colors.black)
     term.setTextColor(colors.lightGray)
     term.setCursorPos(contentX, contentY)
     term.write(string.format("ID: %d", os.getComputerID()))
@@ -759,9 +760,10 @@ function app.startupSequence()
     
     if not modem then
         -- Show waiting message
+        term.setBackgroundColor(colors.black)
         term.setTextColor(colors.orange)
         term.setCursorPos(contentX, contentY + 2)
-        term.write("Waiting for Modem" .. string.rep(" ", 20))
+        term.write("Waiting for Modem")
         
         -- Wait for modem to be attached with loading circle animation
         local circleFrames = {
@@ -831,6 +833,7 @@ function app.startupSequence()
                     -- Update loading circle animation
                     frameIndex = frameIndex % #rotatingCircle + 1
                     
+                    term.setBackgroundColor(colors.black)
                     term.setTextColor(colors.blue)
                     term.setCursorPos(contentX, contentY + 4)
                     term.write(rotatingCircle[frameIndex])
@@ -845,26 +848,29 @@ function app.startupSequence()
         end
         
         -- Modem found!
+        term.setBackgroundColor(colors.black)
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
-        term.write("Modem Found!" .. string.rep(" ", 20))
+        term.write("Modem Found!")
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✓     ")
         sleep(1)
     else
         -- Already has modem
+        term.setBackgroundColor(colors.black)
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
-        term.write("Modem Detected" .. string.rep(" ", 20))
+        term.write("Modem Detected")
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✓     ")
         sleep(0.5)
     end
     
     -- ===== STEP 2: WAIT FOR COORDINATOR =====
+    term.setBackgroundColor(colors.black)
     term.setTextColor(colors.orange)
     term.setCursorPos(contentX, contentY + 2)
-    term.write("Linking to Coordinator" .. string.rep(" ", 20))
+    term.write("Linking to Coordinator")
     term.setCursorPos(contentX, contentY + 4)
     term.write(string.rep(" ", 11))
     sleep(0.3)
@@ -908,6 +914,7 @@ function app.startupSequence()
                     -- Only process timer events, ignore key/char/mouse
                     if event == "timer" and p1 == timer then
                         frameIndex = frameIndex % #rotatingCircle + 1
+                        term.setBackgroundColor(colors.black)
                         term.setTextColor(colors.blue)
                         term.setCursorPos(contentX, contentY + 4)
                         term.write(rotatingCircle[frameIndex])
@@ -920,16 +927,18 @@ function app.startupSequence()
     
     -- Update final status
     if connected then
+        term.setBackgroundColor(colors.black)
         term.setTextColor(colors.lime)
         term.setCursorPos(contentX, contentY + 2)
-        term.write("Connected!" .. string.rep(" ", 20))
+        term.write("Connected!")
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✓     ")
         sleep(1.5)
     else
+        term.setBackgroundColor(colors.black)
         term.setTextColor(colors.red)
         term.setCursorPos(contentX, contentY + 2)
-        term.write("Link Failed" .. string.rep(" ", 20))
+        term.write("Link Failed")
         term.setCursorPos(contentX, contentY + 4)
         term.write("     ✗     ")
         sleep(2)
