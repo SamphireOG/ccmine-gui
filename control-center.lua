@@ -164,11 +164,24 @@ function control.showTurtleList()
     -- Title
     gui.centerText("Turtle Fleet", 1, gui.getColor("primary"), colors.white)
     
+    local w, h = layouts.getScreenSize()
+    local isPocket = (w < 40)
+    
     -- Turtle List Panel
-    local listPanel = components.createPanel("list", 2, 3, 47, 15, "All Turtles")
+    local panelW = isPocket and (w - 1) or 47
+    local panelH = isPocket and (h - 6) or 15
+    local panelX = isPocket and 1 or 2
+    local panelY = 3
+    
+    local listPanel = components.createPanel("list", panelX, panelY, panelW, panelH, "All Turtles")
     listPanel.borderColor = gui.getColor("border")
     
-    local turtleList = components.createList("turtleList", 4, 5, 43, 11)
+    local listX = panelX + 2
+    local listY = panelY + 2
+    local listW = panelW - 4
+    local listH = panelH - 4
+    
+    local turtleList = components.createList("turtleList", listX, listY, listW, listH)
     
     local turtles = coordinator.getAllTurtles()
     local count = 0
@@ -190,7 +203,8 @@ function control.showTurtleList()
     end
     
     if count == 0 then
-        components.createLabel("noTurtles", 4, 10, "No turtles registered")
+        local msgY = math.floor(panelY + panelH / 2)
+        components.createLabel("noTurtles", listX, msgY, "No turtles registered")
     end
     
     -- Selection handler
@@ -200,7 +214,11 @@ function control.showTurtleList()
     end
     
     -- Back button
-    local backBtn = components.createButton("back", 19, 18, 13, 2, "Back",
+    local btnW = isPocket and (w - 3) or 13
+    local btnX = isPocket and 2 or 19
+    local btnY = h - 2
+    
+    local backBtn = components.createButton("back", btnX, btnY, btnW, 2, "Back",
         function() control.showDashboard() end)
     
     gui.draw()
@@ -283,11 +301,24 @@ function control.showProjectList()
     -- Title
     gui.centerText("Project Manager", 1, gui.getColor("primary"), colors.white)
     
+    local w, h = layouts.getScreenSize()
+    local isPocket = (w < 40)
+    
     -- Project List Panel
-    local listPanel = components.createPanel("list", 2, 3, 47, 15, "All Projects")
+    local panelW = isPocket and (w - 1) or 47
+    local panelH = isPocket and (h - 9) or 15
+    local panelX = isPocket and 1 or 2
+    local panelY = 3
+    
+    local listPanel = components.createPanel("list", panelX, panelY, panelW, panelH, "All Projects")
     listPanel.borderColor = gui.getColor("border")
     
-    local projectList = components.createList("projectList", 4, 5, 43, 11)
+    local listX = panelX + 2
+    local listY = panelY + 2
+    local listW = panelW - 4
+    local listH = panelH - 4
+    
+    local projectList = components.createList("projectList", listX, listY, listW, listH)
     
     local projects = projectManager.getAll()
     local count = 0
@@ -300,7 +331,8 @@ function control.showProjectList()
     end
     
     if count == 0 then
-        components.createLabel("noProjects", 4, 10, "No projects created")
+        local msgY = math.floor(panelY + panelH / 2)
+        components.createLabel("noProjects", listX, msgY, "No projects created")
     end
     
     -- Selection handler
@@ -310,11 +342,16 @@ function control.showProjectList()
     end
     
     -- Buttons
-    local newBtn = components.createButton("new", 14, 18, 13, 2, "New Project",
+    local btnY = h - 5
+    local btnW = isPocket and math.floor((w - 4) / 2) or 13
+    local btn1X = isPocket and 2 or 14
+    local btn2X = isPocket and (btnW + 3) or 28
+    
+    local newBtn = components.createButton("new", btn1X, btnY, btnW, 2, "New Project",
         function() control.showCreateProject() end)
     newBtn.bgColor = gui.getColor("success")
     
-    local backBtn = components.createButton("back", 28, 18, 13, 2, "Back",
+    local backBtn = components.createButton("back", btn2X, btnY, btnW, 2, "Back",
         function() control.showDashboard() end)
     
     gui.draw()
