@@ -447,11 +447,66 @@ function control.showCreateProject()
     gui.clear()
     
     local w, h = layouts.getScreenSize()
+    local isPocket = (w < 40)
     
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
     
-    -- Form Panel
+    -- Simplified form for pocket computers
+    if isPocket then
+        local formX = 2
+        local formY = 3
+        
+        -- Project Name
+        components.createLabel("nameLbl", formX, formY, "Name:")
+        local nameInput = components.createTextInput("name", formX, formY + 1, w - 4, "North Mine")
+        
+        -- Project Type
+        components.createLabel("typeLbl", formX, formY + 3, "Type:")
+        components.createLabel("type1", formX, formY + 4, "1=Branch 2=Quarry")
+        components.createLabel("type2", formX, formY + 5, "3=Strip Mine")
+        local typeInput = components.createTextInput("type", formX, formY + 6, 4, "1")
+        
+        -- Starting Position (compact)
+        components.createLabel("posLbl", formX, formY + 8, "Start Pos:")
+        components.createLabel("xLbl", formX, formY + 9, "X:")
+        local xInput = components.createTextInput("x", formX + 3, formY + 9, 6, "0")
+        components.createLabel("yLbl", formX + 11, formY + 9, "Y:")
+        local yInput = components.createTextInput("y", formX + 14, formY + 9, 5, "11")
+        components.createLabel("zLbl", formX, formY + 10, "Z:")
+        local zInput = components.createTextInput("z", formX + 3, formY + 10, 6, "0")
+        
+        -- Buttons
+        local btnW = math.floor((w - 5) / 2)
+        local btnY = h - 2
+        
+        local createBtn = components.createButton("create", 2, btnY, btnW, 2, "Create",
+            function()
+                local typeMap = { ["1"] = "branch_mine", ["2"] = "quarry", ["3"] = "strip_mine" }
+                local projectType = typeMap[typeInput.value] or "branch_mine"
+                local name = nameInput.value ~= "" and nameInput.value or "New Project"
+                
+                local config = { mainTunnelLength = 64, sideTunnelLength = 32 }
+                local startPos = {
+                    x = tonumber(xInput.value) or 0,
+                    y = tonumber(yInput.value) or 11,
+                    z = tonumber(zInput.value) or 0
+                }
+                
+                local projectId = projectManager.create(projectType, name, config, startPos)
+                gui.notify("Project created: " .. name, colors.white, colors.green, 2)
+                control.showProjectList()
+            end)
+        createBtn.bgColor = gui.getColor("success")
+        
+        local cancelBtn = components.createButton("cancel", btnW + 3, btnY, btnW, 2, "Cancel",
+            function() control.showProjectList() end)
+        
+        gui.draw()
+        return
+    end
+    
+    -- Regular computer layout (original)
     local formPanel = components.createPanel("form", 3, 3, w - 6, h - 6, "Project Configuration")
     formPanel.borderColor = gui.getColor("border")
     
