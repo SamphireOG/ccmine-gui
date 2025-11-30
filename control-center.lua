@@ -48,7 +48,7 @@ function control.showDashboard()
     -- Title
     gui.centerText("CCMine Control Center", 1, gui.getColor("primary"), colors.white)
     
-    local w, h = gui.getScreenSize()
+    local w, h = layouts.getScreenSize()
     
     -- Stats Panel
     local statsPanel = components.createPanel("stats", 2, 3, 23, 8, "Fleet Overview")
@@ -356,7 +356,7 @@ function control.showCreateProject()
     control.state.currentScreen = "createProject"
     gui.clearComponents()
     
-    local w, h = gui.getScreenSize()
+    local w, h = layouts.getScreenSize()
     
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
