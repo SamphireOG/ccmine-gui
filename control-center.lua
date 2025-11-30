@@ -1,9 +1,11 @@
--- Control Center - Turtle Fleet Management Interface
--- Standalone application for managing all turtles and projects
+-- CCMine Control Center - Unified Fleet & Project Management
+-- Complete interface for managing turtles, creating projects, and coordinating mining operations
 
 local gui = require("gui-core")
 local components = require("gui-components")
 local layouts = require("gui-layouts")
+local dialogs = require("gui-dialogs")
+local data = require("gui-data")
 local coordinator = require("coordinator")
 local projectManager = require("project-manager")
 local zoneAllocator = require("zone-allocator")
@@ -19,6 +21,24 @@ control.state = {
     coordinatorRunning = false
 }
 
+-- ========== PROJECT DATA PERSISTENCE ==========
+
+local function listSavedProjects()
+    return data.listConfigs("project_", ".cfg")
+end
+
+local function loadSavedProject(projectName)
+    return data.loadConfig(projectName, "project_", ".cfg")
+end
+
+local function saveSavedProject(projectName, projectData)
+    return data.saveConfig(projectName, projectData, "project_", ".cfg")
+end
+
+local function deleteSavedProject(projectName)
+    return data.deleteConfig(projectName, "project_", ".cfg")
+end
+
 -- ========== DASHBOARD SCREEN ==========
 
 function control.showDashboard()
@@ -28,8 +48,10 @@ function control.showDashboard()
     -- Title
     gui.centerText("CCMine Control Center", 1, gui.getColor("primary"), colors.white)
     
+    local w, h = gui.getScreenSize()
+    
     -- Stats Panel
-    local statsPanel = components.createPanel("stats", 2, 3, 23, 8, "Overview")
+    local statsPanel = components.createPanel("stats", 2, 3, 23, 8, "Fleet Overview")
     statsPanel.borderColor = gui.getColor("border")
     
     local stats = coordinator.getStats()
@@ -51,7 +73,7 @@ function control.showDashboard()
         string.format("Projects: %d active", stats.activeProjects))
     
     -- Project Summary Panel
-    local projPanel = components.createPanel("projects", 26, 3, 23, 8, "Projects")
+    local projPanel = components.createPanel("projects", 26, 3, 23, 8, "Project Stats")
     projPanel.borderColor = gui.getColor("border")
     
     local projectSummary = projectManager.getSummary()
@@ -74,7 +96,7 @@ function control.showDashboard()
     turtlesBtn.bgColor = gui.getColor("primary")
     
     local projectsBtn = components.createButton("projectsBtn", 18, 14, 13, 2, "Projects",
-        function() control.showProjectManager() end)
+        function() control.showProjectList() end)
     projectsBtn.bgColor = gui.getColor("primary")
     
     local createBtn = components.createButton("createBtn", 32, 14, 13, 2, "New Project",
@@ -186,13 +208,13 @@ function control.showTurtleDetail()
     local homeBtn = components.createButton("home", 18, 16, 13, 1, "Return Home",
         function()
             coordinator.sendCommand(turtle.id, "return_home")
-            print("Sent return home command")
+            gui.notify("Sent return home command", colors.white, colors.green, 2)
         end)
     
     local unassignBtn = components.createButton("unassign", 32, 16, 13, 1, "Unassign",
         function()
             coordinator.unassignFromProject(turtle.id)
-            print("Turtle unassigned")
+            gui.notify("Turtle unassigned", colors.white, colors.orange, 2)
         end)
     
     -- Back button
@@ -202,9 +224,9 @@ function control.showTurtleDetail()
     gui.draw()
 end
 
--- ========== PROJECT MANAGER SCREEN ==========
+-- ========== PROJECT LIST SCREEN ==========
 
-function control.showProjectManager()
+function control.showProjectList()
     control.state.currentScreen = "projects"
     gui.clearComponents()
     
@@ -252,7 +274,7 @@ end
 
 function control.showProjectDetail()
     if not control.state.selectedProject then
-        control.showProjectManager()
+        control.showProjectList()
         return
     end
     
@@ -295,14 +317,14 @@ function control.showProjectDetail()
         local pauseBtn = components.createButton("pause", 4, 15, 11, 2, "Pause",
             function()
                 projectManager.pause(project.id)
-                print("Project paused")
+                gui.notify("Project paused", colors.white, colors.orange, 2)
             end)
         pauseBtn.bgColor = gui.getColor("warning")
     elseif project.status == "paused" then
         local resumeBtn = components.createButton("resume", 4, 15, 11, 2, "Resume",
             function()
                 projectManager.resume(project.id)
-                print("Project resumed")
+                gui.notify("Project resumed", colors.white, colors.green, 2)
             end)
         resumeBtn.bgColor = gui.getColor("success")
     end
@@ -310,19 +332,20 @@ function control.showProjectDetail()
     local coordBtn = components.createButton("coord", 16, 15, 11, 2, "Broadcast",
         function()
             coordinator.broadcastCoordination(project.id)
-            print("Sent coordination update")
+            gui.notify("Sent coordination update", colors.white, colors.blue, 2)
         end)
     
-    local cancelBtn = components.createButton("cancel", 28, 15, 11, 2, "Cancel",
+    local deleteBtn = components.createButton("delete", 28, 15, 11, 2, "Delete",
         function()
             projectManager.cancel(project.id)
-            print("Project cancelled")
+            gui.notify("Project deleted", colors.white, colors.red, 2)
+            control.showProjectList()
         end)
-    cancelBtn.bgColor = gui.getColor("error")
+    deleteBtn.bgColor = gui.getColor("error")
     
     -- Back button
     local backBtn = components.createButton("back", 19, 19, 13, 2, "Back",
-        function() control.showProjectManager() end)
+        function() control.showProjectList() end)
     
     gui.draw()
 end
@@ -333,33 +356,49 @@ function control.showCreateProject()
     control.state.currentScreen = "createProject"
     gui.clearComponents()
     
+    local w, h = gui.getScreenSize()
+    
     -- Title
     gui.centerText("Create New Project", 1, gui.getColor("primary"), colors.white)
     
     -- Form Panel
-    local formPanel = components.createPanel("form", 5, 3, 41, 14, "Project Details")
+    local formPanel = components.createPanel("form", 3, 3, w - 6, h - 6, "Project Configuration")
     formPanel.borderColor = gui.getColor("border")
     
-    components.createLabel("nameLbl", 7, 5, "Name:")
-    local nameInput = components.createTextInput("name", 15, 5, 27, "North Mine")
+    local formX = 5
+    local formY = 5
     
-    components.createLabel("typeLbl", 7, 7, "Type:")
-    components.createLabel("type1", 15, 7, "1) Branch Mine")
-    components.createLabel("type2", 15, 8, "2) Quarry")
-    components.createLabel("type3", 15, 9, "3) Strip Mine")
-    local typeInput = components.createTextInput("type", 15, 10, 5, "1")
+    -- Project Name
+    components.createLabel("nameLbl", formX, formY, "Project Name:")
+    local nameInput = components.createTextInput("name", formX + 15, formY, w - 24, "North Mine")
     
-    components.createLabel("xLbl", 7, 12, "Start X:")
-    local xInput = components.createTextInput("x", 16, 12, 8, "0")
+    -- Project Type
+    components.createLabel("typeLbl", formX, formY + 2, "Project Type:")
+    components.createLabel("type1", formX + 2, formY + 3, "1) Branch Mine")
+    components.createLabel("type2", formX + 2, formY + 4, "2) Quarry")
+    components.createLabel("type3", formX + 2, formY + 5, "3) Strip Mine")
+    local typeInput = components.createTextInput("type", formX + 15, formY + 2, 5, "1")
     
-    components.createLabel("yLbl", 26, 12, "Y:")
-    local yInput = components.createTextInput("y", 29, 12, 8, "64")
+    -- Dimensions
+    components.createLabel("mainLbl", formX, formY + 7, "Main Tunnel Length:")
+    local mainInput = components.createTextInput("main", formX + 20, formY + 7, 8, "64")
     
-    components.createLabel("zLbl", 7, 13, "Start Z:")
-    local zInput = components.createTextInput("z", 16, 13, 8, "0")
+    components.createLabel("sideLbl", formX, formY + 8, "Side Tunnel Length:")
+    local sideInput = components.createTextInput("side", formX + 20, formY + 8, 8, "32")
+    
+    -- Starting Position
+    components.createLabel("posLbl", formX, formY + 10, "Starting Position:")
+    components.createLabel("xLbl", formX + 2, formY + 11, "X:")
+    local xInput = components.createTextInput("x", formX + 5, formY + 11, 6, "0")
+    
+    components.createLabel("yLbl", formX + 13, formY + 11, "Y:")
+    local yInput = components.createTextInput("y", formX + 16, formY + 11, 6, "11")
+    
+    components.createLabel("zLbl", formX + 24, formY + 11, "Z:")
+    local zInput = components.createTextInput("z", formX + 27, formY + 11, 6, "0")
     
     -- Buttons
-    local createBtn = components.createButton("create", 8, 17, 15, 2, "Create",
+    local createBtn = components.createButton("create", formX, h - 3, 15, 2, "Create",
         function()
             local typeMap = {
                 ["1"] = "branch_mine",
@@ -370,21 +409,26 @@ function control.showCreateProject()
             local projectType = typeMap[typeInput.value] or "branch_mine"
             local name = nameInput.value ~= "" and nameInput.value or "New Project"
             
+            local config = {
+                mainTunnelLength = tonumber(mainInput.value) or 64,
+                sideTunnelLength = tonumber(sideInput.value) or 32
+            }
+            
             local startPos = {
                 x = tonumber(xInput.value) or 0,
-                y = tonumber(yInput.value) or 64,
+                y = tonumber(yInput.value) or 11,
                 z = tonumber(zInput.value) or 0
             }
             
-            local projectId = projectManager.create(projectType, name, nil, startPos)
-            print("Project created: " .. name)
+            local projectId = projectManager.create(projectType, name, config, startPos)
+            gui.notify("Project created: " .. name, colors.white, colors.green, 2)
             
-            control.showProjectManager()
+            control.showProjectList()
         end)
     createBtn.bgColor = gui.getColor("success")
     
-    local cancelBtn = components.createButton("cancel", 26, 17, 15, 2, "Cancel",
-        function() control.showProjectManager() end)
+    local cancelBtn = components.createButton("cancel", formX + 17, h - 3, 15, 2, "Cancel",
+        function() control.showProjectList() end)
     
     gui.draw()
 end
@@ -406,7 +450,7 @@ function control.showAssignProject()
     gui.centerText("Assign to Project", 1, gui.getColor("primary"), colors.white)
     
     components.createLabel("turtleLabel", 2, 2,
-        string.format("Turtle: %s", turtle.label))
+        string.format("Turtle: %s (ID: %d)", turtle.label, turtle.id))
     
     -- Project List
     local listPanel = components.createPanel("list", 2, 3, 47, 13, "Available Projects")
@@ -439,10 +483,10 @@ function control.showAssignProject()
     projectList.onSelect = function(item)
         local success, err = coordinator.assignToProject(turtle.id, item.data.id)
         if success then
-            print("Turtle assigned successfully!")
+            gui.notify("Turtle assigned successfully!", colors.white, colors.green, 2)
             control.showTurtleDetail()
         else
-            print("Assignment failed: " .. (err or "unknown error"))
+            gui.notify("Assignment failed: " .. (err or "unknown"), colors.white, colors.red, 3)
         end
     end
     
@@ -473,7 +517,7 @@ function control.updateDisplay()
     elseif control.state.currentScreen == "turtles" then
         control.showTurtleList()
     elseif control.state.currentScreen == "projects" then
-        control.showProjectManager()
+        control.showProjectList()
     end
 end
 
@@ -485,17 +529,22 @@ function control.run()
     gui.setTheme("default")
     
     -- Start coordinator
+    term.clear()
+    term.setCursorPos(1, 1)
     print("Starting coordinator...")
     local success = coordinator.start()
     
     if not success then
         print("Failed to start coordinator!")
+        print("Make sure a wireless modem is attached.")
         print("Press any key to exit...")
         os.pullEvent("key")
         return
     end
     
     control.state.coordinatorRunning = true
+    print("Coordinator started successfully!")
+    sleep(1)
     
     -- Show dashboard
     control.showDashboard()
@@ -546,4 +595,3 @@ if not ... then
 end
 
 return control
-

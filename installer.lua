@@ -23,7 +23,6 @@ local NETWORK_FILES = {
 
 local EXAMPLE_FILES = {
     "gui-demo.lua",
-    "mine-dashboard.lua",
     "main.lua",
     "control-center.lua"
 }
@@ -538,15 +537,14 @@ local function main()
         print("  - gui-demo: Framework demo")
     elseif deviceType == "pocket" then
         print("Recommended for Pocket:")
-        print("  - mine-dashboard: Project manager")
-        print("  - control-center: Coordinator")
+        print("  - control-center: Unified fleet & project manager")
         print("")
         print("Also available:")
         print("  - gui-demo: Framework demo")
     else
         print("Recommended for Computers:")
-        print("  - control-center: Coordinator")
-        print("  - mine-dashboard: Project manager")
+        print("  - control-center: Unified fleet & project manager")
+        print("    (Runs coordinator + manages projects + turtles)")
         print("")
         print("Also available:")
         print("  - gui-demo: Framework demo")

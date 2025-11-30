@@ -19,7 +19,6 @@ local oldFiles = {
     "gui-dialogs.lua",
     "gui-data.lua",
     "gui-demo.lua",
-    "mine-dashboard.lua",
     "main.lua",
     "installer.lua",
     "protocol.lua",
