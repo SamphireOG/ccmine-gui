@@ -68,6 +68,9 @@ function app.createMainScreen()
     
     app.updateTurtleInfo()
     
+    -- Get screen dimensions
+    local w, h = term.getSize()
+    
     -- Create layout regions
     local regions = layouts.createRegions({
         header = 3,
@@ -82,63 +85,69 @@ function app.createMainScreen()
         turtleLabel)
     header.titleBgColor = gui.getColor("primary")
     
-    -- Status Panel
-    local statusPanel = components.createPanel("status", 2, 5, 47, 8, "Turtle Status")
+    -- Status Panel (responsive width)
+    local statusPanel = components.createPanel("status", 1, 5, w, 8, "Turtle Status")
     statusPanel.borderColor = gui.getColor("border")
     
-    -- Fuel Bar
-    local fuelLabel = components.createLabel("fuelLabel", 4, 7, "Fuel:")
+    -- Fuel Bar (responsive)
+    local fuelLabel = components.createLabel("fuelLabel", 3, 7, "Fuel:")
     local fuelPercent = math.floor((app.state.fuel / app.state.maxFuel) * 100)
-    local fuelBar = components.createProgressBar("fuelBar", 10, 7, 37)
+    local fuelBar = components.createProgressBar("fuelBar", 9, 7, w - 10)
     fuelBar.value = fuelPercent
     fuelBar.fillColor = fuelPercent > 50 and gui.getColor("success") or 
                         fuelPercent > 20 and gui.getColor("warning") or 
                         gui.getColor("error")
     
-    -- Inventory Bar
-    local invLabel = components.createLabel("invLabel", 4, 8, "Inv:")
+    -- Inventory Bar (responsive)
+    local invLabel = components.createLabel("invLabel", 3, 8, "Inv:")
     local invPercent = math.floor((app.state.inventory / app.state.maxInventory) * 100)
-    local invBar = components.createProgressBar("invBar", 10, 8, 37)
+    local invBar = components.createProgressBar("invBar", 9, 8, w - 10)
     invBar.value = invPercent
     
-    -- Position
-    local posLabel = components.createLabel("position", 4, 10,
-        string.format("Pos: X:%d Y:%d Z:%d", 
+    -- Position (shortened for narrow screens)
+    local posLabel = components.createLabel("position", 3, 10,
+        string.format("X:%d Y:%d Z:%d", 
             app.state.position.x, app.state.position.y, app.state.position.z))
     
     -- Status
     local statusText = app.state.mining and "MINING" or "IDLE"
-    local statusLabel = components.createLabel("statusText", 4, 11, "Status: " .. statusText)
+    local statusLabel = components.createLabel("statusText", 3, 11, "Status: " .. statusText)
     statusLabel.fgColor = app.state.mining and gui.getColor("success") or gui.getColor("warning")
     
-    -- Network Status
-    if app.state.networkEnabled then
+    -- Network Status (only if enough space)
+    if app.state.networkEnabled and w >= 39 then
         local netStatus = app.state.networkStatus or {}
-        local netLabel = components.createLabel("netStatus", 35, 11,
-            netStatus.connected and "[NET: ON]" or "[NET: OFF]")
+        local netLabel = components.createLabel("netStatus", w - 9, 11,
+            netStatus.connected and "[NET:ON]" or "[NET:OFF]")
         netLabel.fgColor = netStatus.connected and gui.getColor("success") or gui.getColor("error")
     end
     
-    -- Footer buttons - turtle-specific
-    local moveBtn = components.createButton("move", 2, regions.footer.y, 11, 2, "Move",
+    -- Footer buttons - responsive sizing
+    local btnW = math.floor((w - 2) / 4)
+    local btn1X = 1
+    local btn2X = btn1X + btnW
+    local btn3X = btn2X + btnW
+    local btn4X = btn3X + btnW
+    
+    local moveBtn = components.createButton("move", btn1X, regions.footer.y, btnW, 2, "Move",
         function()
             app.showMoveScreen()
         end)
     moveBtn.bgColor = gui.getColor("primary")
     
-    local mineBtn = components.createButton("mine", 14, regions.footer.y, 11, 2, "Mine",
+    local mineBtn = components.createButton("mine", btn2X, regions.footer.y, btnW, 2, "Mine",
         function()
             app.showMineScreen()
         end)
     mineBtn.bgColor = gui.getColor("success")
     
-    local netBtn = components.createButton("network", 26, regions.footer.y, 11, 2, "Network",
+    local netBtn = components.createButton("network", btn3X, regions.footer.y, btnW, 2, "Net",
         function()
             app.showNetworkScreen()
         end)
     netBtn.bgColor = app.state.networkEnabled and gui.getColor("primary") or colors.gray
     
-    local exitBtn = components.createButton("exit", 38, regions.footer.y, 11, 2, "Exit",
+    local exitBtn = components.createButton("exit", btn4X, regions.footer.y, btnW + 1, 2, "Exit",
         function()
             app.exit()
         end)
@@ -153,14 +162,21 @@ function app.showMoveScreen()
     app.state.currentScreen = "move"
     gui.clearComponents()
     
+    local w, h = term.getSize()
+    
     gui.centerText("Turtle Movement", 1, gui.getColor("primary"), colors.white)
     
-    -- Movement Panel
-    local panel = components.createPanel("move", 5, 3, 41, 14, "Controls")
+    -- Movement Panel (responsive)
+    local panel = components.createPanel("move", 2, 3, w - 2, 14, "Controls")
     panel.borderColor = gui.getColor("border")
     
+    -- Center column for main buttons
+    local centerX = math.floor(w / 2) - 4
+    local sideX = math.floor(w / 2) - 15
+    local rightX = math.floor(w / 2) + 6
+    
     -- Up
-    local upBtn = components.createButton("up", 20, 5, 10, 2, "UP", function()
+    local upBtn = components.createButton("up", centerX, 5, 9, 2, "UP", function()
         if turtle.up() then
             app.state.position.y = app.state.position.y + 1
             app.updateTurtleInfo()
@@ -169,7 +185,7 @@ function app.showMoveScreen()
     end)
     
     -- Forward
-    local fwdBtn = components.createButton("fwd", 20, 8, 10, 2, "FORWARD", function()
+    local fwdBtn = components.createButton("fwd", centerX, 8, 9, 2, "FORWARD", function()
         if turtle.forward() then
             app.updateTurtleInfo()
             app.showMoveScreen()
@@ -177,7 +193,7 @@ function app.showMoveScreen()
     end)
     
     -- Back
-    local backBtn = components.createButton("back", 20, 11, 10, 2, "BACK", function()
+    local backBtn = components.createButton("back", centerX, 11, 9, 2, "BACK", function()
         if turtle.back() then
             app.updateTurtleInfo()
             app.showMoveScreen()
@@ -185,7 +201,7 @@ function app.showMoveScreen()
     end)
     
     -- Down
-    local downBtn = components.createButton("down", 20, 14, 10, 2, "DOWN", function()
+    local downBtn = components.createButton("down", centerX, 14, 9, 2, "DOWN", function()
         if turtle.down() then
             app.state.position.y = app.state.position.y - 1
             app.updateTurtleInfo()
@@ -194,19 +210,21 @@ function app.showMoveScreen()
     end)
     
     -- Turn Left
-    local leftBtn = components.createButton("left", 8, 8, 10, 2, "< LEFT", function()
+    local leftBtn = components.createButton("left", sideX, 8, 9, 2, "< LEFT", function()
         turtle.turnLeft()
         app.showMoveScreen()
     end)
     
     -- Turn Right
-    local rightBtn = components.createButton("right", 32, 8, 10, 2, "RIGHT >", function()
+    local rightBtn = components.createButton("right", rightX, 8, 9, 2, "RIGHT >", function()
         turtle.turnRight()
         app.showMoveScreen()
     end)
     
-    -- Back button
-    local returnBtn = components.createButton("return", 15, 18, 20, 2, "Back to Main",
+    -- Back button (centered)
+    local backBtnW = 14
+    local backBtnX = math.floor(w / 2) - math.floor(backBtnW / 2)
+    local returnBtn = components.createButton("return", backBtnX, h - 1, backBtnW, 2, "Back",
         function()
             app.createMainScreen()
         end)
@@ -220,14 +238,22 @@ function app.showMineScreen()
     app.state.currentScreen = "mine"
     gui.clearComponents()
     
+    local w, h = term.getSize()
+    
     gui.centerText("Mining Controls", 1, gui.getColor("primary"), colors.white)
     
-    -- Mining Panel
-    local panel = components.createPanel("mine", 5, 3, 41, 14, "Actions")
+    -- Mining Panel (responsive)
+    local panel = components.createPanel("mine", 2, 3, w - 2, h - 5, "Actions")
     panel.borderColor = gui.getColor("border")
     
+    -- Button sizing (3 columns)
+    local btnW = math.floor((w - 6) / 3)
+    local col1 = 4
+    local col2 = col1 + btnW + 1
+    local col3 = col2 + btnW + 1
+    
     -- Dig Forward
-    local digFwdBtn = components.createButton("digfwd", 8, 5, 13, 2, "Dig Forward", function()
+    local digFwdBtn = components.createButton("digfwd", col1, 5, btnW, 2, "Dig Fwd", function()
         if turtle.dig() then
             gui.notify("Dug forward", colors.white, gui.getColor("success"), 1)
         end
@@ -235,7 +261,7 @@ function app.showMineScreen()
     digFwdBtn.bgColor = gui.getColor("warning")
     
     -- Dig Up
-    local digUpBtn = components.createButton("digup", 22, 5, 13, 2, "Dig Up", function()
+    local digUpBtn = components.createButton("digup", col2, 5, btnW, 2, "Dig Up", function()
         if turtle.digUp() then
             gui.notify("Dug up", colors.white, gui.getColor("success"), 1)
         end
@@ -243,7 +269,7 @@ function app.showMineScreen()
     digUpBtn.bgColor = gui.getColor("warning")
     
     -- Dig Down
-    local digDownBtn = components.createButton("digdown", 36, 5, 9, 2, "Dig Down", function()
+    local digDownBtn = components.createButton("digdown", col3, 5, btnW, 2, "Dig Down", function()
         if turtle.digDown() then
             gui.notify("Dug down", colors.white, gui.getColor("success"), 1)
         end
@@ -251,15 +277,15 @@ function app.showMineScreen()
     digDownBtn.bgColor = gui.getColor("warning")
     
     -- Place Forward
-    local placeFwdBtn = components.createButton("placefwd", 8, 8, 13, 2, "Place Fwd", function()
+    local placeFwdBtn = components.createButton("placefwd", col1, 8, btnW, 2, "Plc Fwd", function()
         if turtle.place() then
-            gui.notify("Placed forward", colors.white, gui.getColor("success"), 1)
+            gui.notify("Placed", colors.white, gui.getColor("success"), 1)
         end
     end)
     placeFwdBtn.bgColor = gui.getColor("success")
     
     -- Place Up
-    local placeUpBtn = components.createButton("placeup", 22, 8, 13, 2, "Place Up", function()
+    local placeUpBtn = components.createButton("placeup", col2, 8, btnW, 2, "Plc Up", function()
         if turtle.placeUp() then
             gui.notify("Placed up", colors.white, gui.getColor("success"), 1)
         end
@@ -267,37 +293,41 @@ function app.showMineScreen()
     placeUpBtn.bgColor = gui.getColor("success")
     
     -- Place Down
-    local placeDownBtn = components.createButton("placedown", 36, 8, 9, 2, "Place Dn", function()
+    local placeDownBtn = components.createButton("placedown", col3, 8, btnW, 2, "Plc Down", function()
         if turtle.placeDown() then
-            gui.notify("Placed down", colors.white, gui.getColor("success"), 1)
+            gui.notify("Placed", colors.white, gui.getColor("success"), 1)
         end
     end)
     placeDownBtn.bgColor = gui.getColor("success")
     
-    -- Refuel button
-    local refuelBtn = components.createButton("refuel", 8, 11, 15, 2, "Refuel (Slot 1)", function()
+    -- Refuel button (2 columns)
+    local btn2W = math.floor((w - 5) / 2)
+    local refuelBtn = components.createButton("refuel", 4, 11, btn2W, 2, "Refuel S1", function()
         app.refuelFromSlot(1)
     end)
     refuelBtn.bgColor = gui.getColor("primary")
     
     -- Inventory button
-    local invBtn = components.createButton("inventory", 24, 11, 13, 2, "Inventory", function()
+    local invBtn = components.createButton("inventory", 4 + btn2W + 1, 11, btn2W, 2, "Inventory", function()
         app.showInventoryScreen()
     end)
     
-    -- Drop All button
-    local dropBtn = components.createButton("drop", 8, 14, 13, 2, "Drop All", function()
+    -- Drop All button (centered)
+    local dropBtnW = math.floor((w - 4) / 2)
+    local dropBtn = components.createButton("drop", 4, 14, dropBtnW, 2, "Drop All", function()
         for slot = 1, 16 do
             turtle.select(slot)
             turtle.drop()
         end
         app.updateTurtleInfo()
-        gui.notify("Dropped inventory", colors.white, gui.getColor("warning"), 2)
+        gui.notify("Dropped", colors.white, gui.getColor("warning"), 2)
     end)
     dropBtn.bgColor = gui.getColor("error")
     
-    -- Back button
-    local returnBtn = components.createButton("return", 15, 18, 20, 2, "Back to Main",
+    -- Back button (centered)
+    local backBtnW = 10
+    local backBtnX = math.floor(w / 2) - math.floor(backBtnW / 2)
+    local returnBtn = components.createButton("return", backBtnX, h - 1, backBtnW, 2, "Back",
         function()
             app.createMainScreen()
         end)
@@ -311,19 +341,26 @@ function app.showInventoryScreen()
     app.state.currentScreen = "inventory"
     gui.clearComponents()
     
+    local w, h = term.getSize()
+    
     gui.centerText("Turtle Inventory", 1, gui.getColor("primary"), colors.white)
     
-    -- Inventory grid
-    local panel = components.createPanel("inv", 5, 3, 41, 14, "16 Slots")
+    -- Inventory grid (responsive)
+    local panel = components.createPanel("inv", 2, 3, w - 2, h - 4, "16 Slots")
     panel.borderColor = gui.getColor("border")
+    
+    -- Calculate button size for 4x4 grid
+    local btnW = math.floor((w - 8) / 4)
+    local btnH = 2
+    local spacing = 1
     
     -- Show slots in 4x4 grid
     for slot = 1, 16 do
         local row = math.floor((slot - 1) / 4)
         local col = (slot - 1) % 4
         
-        local x = 7 + (col * 10)
-        local y = 5 + (row * 3)
+        local x = 4 + (col * (btnW + spacing))
+        local y = 5 + (row * (btnH + spacing))
         
         local item = turtle.getItemDetail(slot)
         local slotText = tostring(slot)
@@ -331,15 +368,17 @@ function app.showInventoryScreen()
             slotText = slotText .. ":" .. item.count
         end
         
-        local slotBtn = components.createButton("slot" .. slot, x, y, 9, 2, slotText, function()
+        local slotBtn = components.createButton("slot" .. slot, x, y, btnW, btnH, slotText, function()
             turtle.select(slot)
-            gui.notify("Selected slot " .. slot, colors.white, gui.getColor("primary"), 1)
+            gui.notify("Slot " .. slot, colors.white, gui.getColor("primary"), 1)
         end)
         slotBtn.bgColor = item and gui.getColor("success") or colors.gray
     end
     
-    -- Back button
-    local returnBtn = components.createButton("return", 15, 18, 20, 2, "Back",
+    -- Back button (centered)
+    local backBtnW = 10
+    local backBtnX = math.floor(w / 2) - math.floor(backBtnW / 2)
+    local returnBtn = components.createButton("return", backBtnX, h - 1, backBtnW, 2, "Back",
         function()
             app.showMineScreen()
         end)
@@ -353,70 +392,73 @@ function app.showNetworkScreen()
     app.state.currentScreen = "network"
     gui.clearComponents()
     
+    local w, h = term.getSize()
+    
     gui.centerText("Network Status", 1, gui.getColor("primary"), colors.white)
     
     local status = app.state.networkStatus or {}
     
-    -- Connection Panel
-    local connPanel = components.createPanel("conn", 2, 3, 47, 7, "Connection")
+    -- Connection Panel (responsive)
+    local connPanel = components.createPanel("conn", 1, 3, w, 7, "Connection")
     connPanel.borderColor = gui.getColor("border")
     
-    local connLabel = components.createLabel("connStatus", 4, 5,
-        status.connected and "Status: Connected" or "Status: Disconnected")
+    local connLabel = components.createLabel("connStatus", 3, 5,
+        status.connected and "Connected" or "Disconnected")
     connLabel.fgColor = status.connected and gui.getColor("success") or gui.getColor("error")
     
-    local idLabel = components.createLabel("id", 4, 6,
+    local idLabel = components.createLabel("id", 3, 6,
         string.format("ID: %d", os.getComputerID()))
     
     local labelText = os.getComputerLabel() or "Unlabeled"
-    local labelLabel = components.createLabel("label", 4, 7,
+    local labelLabel = components.createLabel("label", 3, 7,
         string.format("Label: %s", labelText))
     
     if status.coordinatorId then
-        local coordLabel = components.createLabel("coord", 4, 8,
-            string.format("Coordinator: %d", status.coordinatorId))
+        local coordLabel = components.createLabel("coord", 3, 8,
+            string.format("Coord: %d", status.coordinatorId))
     end
     
-    -- Project Panel
+    -- Project Panel (responsive)
     if status.currentProject then
-        local projPanel = components.createPanel("proj", 2, 11, 47, 7, "Current Project")
+        local projPanel = components.createPanel("proj", 1, 11, w, 7, "Project")
         projPanel.borderColor = gui.getColor("border")
         
-        local projName = components.createLabel("projName", 4, 13,
-            "Project: " .. (status.currentProject.name or "Unknown"))
+        local projName = components.createLabel("projName", 3, 13,
+            "Proj: " .. (status.currentProject.name or "Unknown"))
         
         if status.assignment then
-            local zoneLabel = components.createLabel("zone", 4, 14,
+            local zoneLabel = components.createLabel("zone", 3, 14,
                 string.format("Zone: %d", status.assignment.zone or 0))
             
-            local instrLabel = components.createLabel("instr", 4, 15,
-                status.assignment.instructions or "Awaiting instructions...")
+            local instrLabel = components.createLabel("instr", 3, 15,
+                status.assignment.instructions or "Awaiting...")
             instrLabel.fgColor = gui.getColor("warning")
         end
         
         -- Peers
         if status.peers and #status.peers > 0 then
-            local peerLabel = components.createLabel("peerLbl", 4, 16,
-                string.format("Teammates: %d turtles", #status.peers))
+            local peerLabel = components.createLabel("peerLbl", 3, 16,
+                string.format("Team: %d", #status.peers))
             peerLabel.fgColor = gui.getColor("primary")
         end
     else
-        local noProjLabel = components.createLabel("noProj", 4, 12,
+        local noProjLabel = components.createLabel("noProj", 3, 12,
             "No project assigned")
         noProjLabel.fgColor = colors.gray
     end
     
-    -- Control Buttons
-    local btnY = 18
+    -- Control Buttons (responsive, 2 columns)
+    local btnY = h - 2
+    local btnW = math.floor((w - 2) / 2)
     
     if not app.state.networkEnabled then
-        local enableBtn = components.createButton("enable", 5, btnY, 18, 2, "Enable Network",
+        local enableBtn = components.createButton("enable", 1, btnY, btnW, 2, "Enable",
             function()
                 app.enableNetwork()
             end)
         enableBtn.bgColor = gui.getColor("success")
     else
-        local refreshBtn = components.createButton("refresh", 5, btnY, 18, 2, "Refresh",
+        local refreshBtn = components.createButton("refresh", 1, btnY, btnW, 2, "Refresh",
             function()
                 app.refreshNetworkStatus()
             end)
@@ -424,7 +466,7 @@ function app.showNetworkScreen()
     end
     
     -- Back button
-    local backBtn = components.createButton("back", 27, btnY, 18, 2, "Back",
+    local backBtn = components.createButton("back", 1 + btnW + 1, btnY, btnW, 2, "Back",
         function()
             app.createMainScreen()
         end)
