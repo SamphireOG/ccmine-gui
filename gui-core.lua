@@ -442,23 +442,17 @@ end
 
 function gui.handleKey(key)
     -- Pass key events to focused component
-    if gui.state.focusedComponent then
-        local component = gui.state.components[gui.state.focusedComponent]
-        if component and component.handleKey then
-            component:handleKey(key)
-            gui.requestRedraw()
-        end
+    if gui.state.focusedComponent and gui.state.focusedComponent.handleKey then
+        gui.state.focusedComponent:handleKey(key)
+        gui.requestRedraw()
     end
 end
 
 function gui.handleChar(char)
     -- Pass character events to focused component
-    if gui.state.focusedComponent then
-        local component = gui.state.components[gui.state.focusedComponent]
-        if component and component.handleChar then
-            component:handleChar(char)
-            gui.requestRedraw()
-        end
+    if gui.state.focusedComponent and gui.state.focusedComponent.handleChar then
+        gui.state.focusedComponent:handleChar(char)
+        gui.requestRedraw()
     end
 end
 
