@@ -466,8 +466,8 @@ function control.showCreateProject()
         
         local selectedType = "branch_mine" -- Default selection
         
-        -- Type buttons
-        local btnW = 7
+        -- Type buttons (adjusted width to fit text)
+        local btnW = 8
         local typeY = formY + 4
         
         -- Function to update button colors
