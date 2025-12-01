@@ -519,6 +519,10 @@ function control.showCreateProject()
         components.createLabel("zLbl", formX, formY + 8, "Z:")
         local zInput = components.createTextInput("z", formX + 3, formY + 8, 6, "0")
         
+        -- Options
+        local torchCheck = components.createCheckbox("torch", formX, formY + 10, "Torch", true)
+        local wallCheck = components.createCheckbox("wall", formX, formY + 11, "Wall Protect", true)
+        
         -- Buttons
         local btnW = math.floor((w - 5) / 2)
         local btnY = h - 2
@@ -527,7 +531,12 @@ function control.showCreateProject()
             function()
                 local name = nameInput.value ~= "" and nameInput.value or "New Project"
                 
-                local config = { mainTunnelLength = 64, sideTunnelLength = 32 }
+                local config = {
+                    mainTunnelLength = 64,
+                    sideTunnelLength = 32,
+                    placeTorches = torchCheck.checked,
+                    wallProtection = wallCheck.checked
+                }
                 local startPos = {
                     x = tonumber(xInput.value) or 0,
                     y = tonumber(yInput.value) or 11,
@@ -583,6 +592,11 @@ function control.showCreateProject()
     components.createLabel("zLbl", formX + 24, formY + 11, "Z:")
     local zInput = components.createTextInput("z", formX + 27, formY + 11, 6, "0")
     
+    -- Options
+    components.createLabel("optLbl", formX, formY + 13, "Options:")
+    local torchCheck = components.createCheckbox("torch", formX + 2, formY + 14, "Place Torches", true)
+    local wallCheck = components.createCheckbox("wall", formX + 2, formY + 15, "Wall Protection", true)
+    
     -- Buttons
     local createBtn = components.createButton("create", formX, h - 3, 15, 2, "Create",
         function()
@@ -597,7 +611,9 @@ function control.showCreateProject()
             
             local config = {
                 mainTunnelLength = tonumber(mainInput.value) or 64,
-                sideTunnelLength = tonumber(sideInput.value) or 32
+                sideTunnelLength = tonumber(sideInput.value) or 32,
+                placeTorches = torchCheck.checked,
+                wallProtection = wallCheck.checked
             }
             
             local startPos = {

@@ -318,6 +318,64 @@ function components.createLabel(id, x, y, text, align)
     return gui.registerComponent(label)
 end
 
+-- ========== CHECKBOX COMPONENT ==========
+
+local Checkbox = {}
+setmetatable(Checkbox, {__index = Component})
+
+function Checkbox:new(id, x, y, label)
+    local obj = Component:new(id, "checkbox", x, y, #label + 4, 1)
+    setmetatable(obj, {__index = Checkbox})
+    
+    obj.checked = false
+    obj.label = label or ""
+    obj.bgColor = gui.getColor("background")
+    obj.fgColor = gui.getColor("foreground")
+    obj.checkColor = gui.getColor("success")
+    obj.callback = nil
+    
+    obj:on("click", function(self)
+        self.checked = not self.checked
+        if self.callback then
+            self.callback(self.checked)
+        end
+        gui.requestRedraw()
+    end)
+    
+    return obj
+end
+
+function Checkbox:draw()
+    if not self.visible then return end
+    
+    local absX, absY = self:getAbsolutePosition()
+    
+    gui.screen.term.setCursorPos(absX, absY)
+    gui.screen.term.setBackgroundColor(self.bgColor)
+    
+    -- Draw checkbox
+    if self.checked then
+        gui.screen.term.setTextColor(self.checkColor)
+        gui.screen.term.write("[X] ")
+    else
+        gui.screen.term.setTextColor(self.fgColor)
+        gui.screen.term.write("[ ] ")
+    end
+    
+    -- Draw label
+    gui.screen.term.setTextColor(self.fgColor)
+    gui.screen.term.write(self.label)
+end
+
+components.Checkbox = Checkbox
+
+function components.createCheckbox(id, x, y, label, checked, callback)
+    local checkbox = Checkbox:new(id, x, y, label)
+    checkbox.checked = checked or false
+    checkbox.callback = callback
+    return gui.registerComponent(checkbox)
+end
+
 -- ========== TEXT INPUT COMPONENT ==========
 
 local TextInput = {}
