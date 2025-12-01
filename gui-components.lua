@@ -399,6 +399,7 @@ function TextInput:new(id, x, y, width)
         self.isFocused = true
         self.cursorPos = #self.value
         gui.state.focusedComponent = self
+        term.setCursorBlink(true)
         gui.requestRedraw()
     end)
     

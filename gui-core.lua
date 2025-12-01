@@ -443,17 +443,21 @@ end
 function gui.handleKey(key)
     -- Pass key events to focused component
     if gui.state.focusedComponent and gui.state.focusedComponent.handleKey then
-        gui.state.focusedComponent:handleKey(key)
+        local result = gui.state.focusedComponent:handleKey(key)
         gui.requestRedraw()
+        return result
     end
+    return false
 end
 
 function gui.handleChar(char)
     -- Pass character events to focused component
     if gui.state.focusedComponent and gui.state.focusedComponent.handleChar then
-        gui.state.focusedComponent:handleChar(char)
+        local result = gui.state.focusedComponent:handleChar(char)
         gui.requestRedraw()
+        return result
     end
+    return false
 end
 
 -- ========== ERROR HANDLING ==========

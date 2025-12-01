@@ -818,12 +818,12 @@ function control.run()
                         break
                     else
                         -- Pass key events to GUI for text input
-                        gui.handleKey(p1)
+                        local handled = gui.handleKey(p1)
                         gui.draw()
                     end
                 elseif event == "char" then
                     -- Pass character events to GUI for text input
-                    gui.handleChar(p1)
+                    local handled = gui.handleChar(p1)
                     gui.draw()
                 end
             end
