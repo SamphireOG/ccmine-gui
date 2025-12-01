@@ -527,7 +527,14 @@ function control.showCreateProject()
             torchCheck = components.createCheckbox("torch", formX, currentY, "Torch", true)
             currentY = currentY + 1
             wallCheck = components.createCheckbox("wall", formX, currentY, "Wall Protect", true)
+            currentY = currentY + 2
+        else
+            currentY = currentY + 1
         end
+        
+        -- Starting Y Position (depth)
+        components.createLabel("yLbl", formX, currentY, "Start Y:")
+        local yInput = components.createTextInput("y", formX + 9, currentY, 6, "11")
         
         -- Buttons
         local btnW = math.floor((w - 5) / 2)
@@ -547,8 +554,10 @@ function control.showCreateProject()
                     config.wallProtection = wallCheck.checked
                 end
                 
-                -- Starting position will be set automatically later
-                local startPos = nil
+                -- Starting position with Y depth (X and Z will be set by turtle)
+                local startPos = {
+                    y = tonumber(yInput.value) or 11
+                }
                 
                 local projectId = projectManager.create(selectedType, name, config, startPos)
                 gui.notify("Project created: " .. name, colors.white, colors.green, 2)
@@ -594,6 +603,10 @@ function control.showCreateProject()
     local torchCheck = components.createCheckbox("torch", formX + 2, formY + 12, "Place Torches", true)
     local wallCheck = components.createCheckbox("wall", formX + 2, formY + 13, "Wall Protection", true)
     
+    -- Starting Y Position (depth)
+    components.createLabel("yLbl", formX, formY + 15, "Starting Y (Depth):")
+    local yInput = components.createTextInput("y", formX + 20, formY + 15, 6, "11")
+    
     -- Buttons
     local createBtn = components.createButton("create", formX, h - 3, 15, 2, "Create",
         function()
@@ -616,8 +629,10 @@ function control.showCreateProject()
                 config.wallProtection = wallCheck.checked
             end
             
-            -- Starting position will be set automatically later
-            local startPos = nil
+            -- Starting position with Y depth (X and Z will be set by turtle)
+            local startPos = {
+                y = tonumber(yInput.value) or 11
+            }
             
             local projectId = projectManager.create(projectType, name, config, startPos)
             gui.notify("Project created: " .. name, colors.white, colors.green, 2)
