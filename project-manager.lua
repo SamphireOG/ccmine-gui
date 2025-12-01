@@ -21,24 +21,65 @@ projectManager.STATUS = {
     CANCELLED = "cancelled"
 }
 
--- Internal storage - Use global to persist across module reloads
-if not _G.CCMine_projects then
-    _G.CCMine_projects = {}
-    print("DEBUG: Initialized new global projects table")
-end
-local projects = _G.CCMine_projects
+-- Internal storage with file persistence
+local PROJECTS_FILE = "ccmine_projects.dat"
+local projects = {}
+local nextProjectNumber = 1
 
-if not _G.CCMine_nextProjectNumber then
-    _G.CCMine_nextProjectNumber = 1
+-- Load projects from file
+local function loadFromFile()
+    if not fs.exists(PROJECTS_FILE) then
+        print("DEBUG: No saved projects file found")
+        return
+    end
+    
+    local file = fs.open(PROJECTS_FILE, "r")
+    if not file then
+        print("DEBUG: Failed to open projects file")
+        return
+    end
+    
+    local data = file.readAll()
+    file.close()
+    
+    if data and #data > 0 then
+        local success, loaded = pcall(textutils.unserialize, data)
+        if success and loaded then
+            projects = loaded.projects or {}
+            nextProjectNumber = loaded.nextProjectNumber or 1
+            local count = 0
+            for _ in pairs(projects) do count = count + 1 end
+            print("DEBUG: Loaded " .. count .. " projects from file")
+        else
+            print("DEBUG: Failed to deserialize projects file")
+        end
+    end
 end
-local nextProjectNumber = _G.CCMine_nextProjectNumber
 
--- Debug: Module load counter
-if not _G.projectManagerLoadCount then
-    _G.projectManagerLoadCount = 0
+-- Save projects to file
+local function saveToFile()
+    local data = {
+        projects = projects,
+        nextProjectNumber = nextProjectNumber
+    }
+    
+    local serialized = textutils.serialize(data)
+    local file = fs.open(PROJECTS_FILE, "w")
+    if file then
+        file.write(serialized)
+        file.close()
+        local count = 0
+        for _ in pairs(projects) do count = count + 1 end
+        print("DEBUG: Saved " .. count .. " projects to file")
+        return true
+    else
+        print("DEBUG: Failed to save projects file")
+        return false
+    end
 end
-_G.projectManagerLoadCount = _G.projectManagerLoadCount + 1
-print("DEBUG: project-manager.lua loaded (count: " .. _G.projectManagerLoadCount .. ")")
+
+-- Load projects on module initialization
+loadFromFile()
 
 -- ========== PROJECT CREATION ==========
 
@@ -74,13 +115,14 @@ function projectManager.create(projectType, name, config, startPos)
     
     projects[projectId] = project
     nextProjectNumber = nextProjectNumber + 1
-    _G.CCMine_nextProjectNumber = nextProjectNumber
+    
+    -- Save to file
+    saveToFile()
     
     -- Debug: Verify storage
     local count = 0
     for _ in pairs(projects) do count = count + 1 end
     print("DEBUG: Project stored. Total projects in table: " .. count)
-    print("DEBUG: Global table has " .. count .. " projects")
     
     return projectId, project
 end
@@ -347,6 +389,7 @@ function projectManager.pause(projectId)
     
     if project.status == projectManager.STATUS.ACTIVE then
         project.status = projectManager.STATUS.PAUSED
+        saveToFile()
         return true
     end
     
@@ -361,6 +404,7 @@ function projectManager.resume(projectId)
     
     if project.status == projectManager.STATUS.PAUSED then
         project.status = projectManager.STATUS.ACTIVE
+        saveToFile()
         return true
     end
     
@@ -375,6 +419,7 @@ function projectManager.cancel(projectId)
     
     project.status = projectManager.STATUS.CANCELLED
     project.stats.endTime = os.epoch("utc")
+    saveToFile()
     return true
 end
 
