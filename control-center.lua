@@ -461,51 +461,54 @@ function control.showCreateProject()
         components.createLabel("nameLbl", formX, formY, "Name:")
         local nameInput = components.createTextInput("name", formX, formY + 1, w - 4, "North Mine")
         
-        -- Project Type (with buttons)
+        -- Project Type (with manual toggle buttons)
         components.createLabel("typeLbl", formX, formY + 3, "Type:")
         
-        local selectedType = "branch_mine" -- Default selection
+        -- Use stored selection or default to branch_mine
+        if not control.state.selectedType then
+            control.state.selectedType = "branch_mine"
+        end
+        local selectedType = control.state.selectedType
         
-        -- Type buttons (adjusted width to fit text)
-        local btnW = 8
-        local typeY = formY + 4
-        
-        -- Function to update button colors
-        local function updateTypeButtons(selected)
-            selectedType = selected
-            local branchBtn = gui.getComponent("typeBranch")
-            local quarryBtn = gui.getComponent("typeQuarry")
-            local stripBtn = gui.getComponent("typeStrip")
+        -- Draw type selection manually
+        local function drawTypeButtons()
+            local btnW = 8
+            local typeY = formY + 4
             
-            if branchBtn then
-                branchBtn.bgColor = (selected == "branch_mine") and gui.getColor("primary") or colors.gray
-                branchBtn.hoverBgColor = (selected == "branch_mine") and gui.getColor("primary") or colors.gray
-            end
-            if quarryBtn then
-                quarryBtn.bgColor = (selected == "quarry") and gui.getColor("primary") or colors.gray
-                quarryBtn.hoverBgColor = (selected == "quarry") and gui.getColor("primary") or colors.gray
-            end
-            if stripBtn then
-                stripBtn.bgColor = (selected == "strip_mine") and gui.getColor("primary") or colors.gray
-                stripBtn.hoverBgColor = (selected == "strip_mine") and gui.getColor("primary") or colors.gray
-            end
-            gui.draw()
+            -- Branch button
+            term.setBackgroundColor(selectedType == "branch_mine" and gui.getColor("primary") or colors.gray)
+            term.setTextColor(colors.white)
+            term.setCursorPos(formX, typeY)
+            term.write(string.rep(" ", btnW))
+            term.setCursorPos(formX + 1, typeY)
+            term.write("Branch")
+            
+            -- Quarry button
+            term.setBackgroundColor(selectedType == "quarry" and gui.getColor("primary") or colors.gray)
+            term.setCursorPos(formX + btnW + 1, typeY)
+            term.write(string.rep(" ", btnW))
+            term.setCursorPos(formX + btnW + 2, typeY)
+            term.write("Quarry")
+            
+            -- Strip button
+            term.setBackgroundColor(selectedType == "strip_mine" and gui.getColor("primary") or colors.gray)
+            term.setCursorPos(formX + (btnW + 1) * 2, typeY)
+            term.write(string.rep(" ", btnW))
+            term.setCursorPos(formX + (btnW + 1) * 2 + 1, typeY)
+            term.write("Strip")
+            
+            term.setBackgroundColor(colors.black)
         end
         
-        local branchBtn = components.createButton("typeBranch", formX, typeY, btnW, 1, "Branch",
-            function() updateTypeButtons("branch_mine") end)
-        branchBtn.bgColor = gui.getColor("primary")
-        branchBtn.hoverBgColor = gui.getColor("primary")
+        -- Store type button positions for click detection
+        control.state.typeButtons = {
+            { x1 = formX, x2 = formX + 7, y = formY + 4, type = "branch_mine" },
+            { x1 = formX + 9, x2 = formX + 16, y = formY + 4, type = "quarry" },
+            { x1 = formX + 18, x2 = formX + 25, y = formY + 4, type = "strip_mine" }
+        }
+        control.state.currentScreen = "create_project"
         
-        local quarryBtn = components.createButton("typeQuarry", formX + btnW + 1, typeY, btnW, 1, "Quarry",
-            function() updateTypeButtons("quarry") end)
-        quarryBtn.bgColor = colors.gray
-        quarryBtn.hoverBgColor = colors.gray
-        
-        local stripBtn = components.createButton("typeStrip", formX + (btnW + 1) * 2, typeY, btnW, 1, "Strip",
-            function() updateTypeButtons("strip_mine") end)
-        stripBtn.bgColor = colors.gray
-        stripBtn.hoverBgColor = colors.gray
+        drawTypeButtons()
         
         -- Starting Position (compact)
         components.createLabel("posLbl", formX, formY + 6, "Start Pos:")
@@ -755,6 +758,19 @@ function control.run()
                 local event, p1, p2, p3 = os.pullEvent()
                 
                 if event == "mouse_click" then
+                    -- Check if clicked on type button (in Create Project screen)
+                    if control.state.typeButtons and control.state.currentScreen == "create_project" then
+                        local x, y = p2, p3
+                        for _, btn in ipairs(control.state.typeButtons) do
+                            if y == btn.y and x >= btn.x1 and x <= btn.x2 then
+                                -- Update selection and redraw
+                                control.state.selectedType = btn.type
+                                control.showCreateProject()
+                                break
+                            end
+                        end
+                    end
+                    
                     local clicked = gui.handleClick(p2, p3, p1)
                     if clicked then
                         gui.draw()
