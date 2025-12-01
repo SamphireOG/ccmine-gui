@@ -563,8 +563,12 @@ function control.showCreateProject()
                     y = tonumber(yInput.value) or 11
                 }
                 
-                local projectId = projectManager.create(selectedType, name, config, startPos)
+                print("DEBUG: Creating project - Type: " .. selectedType .. ", Name: " .. name)
+                local projectId, project = projectManager.create(selectedType, name, config, startPos)
+                print("DEBUG: Project created with ID: " .. tostring(projectId))
+                print("DEBUG: Project object: " .. tostring(project))
                 gui.notify("Project created: " .. name, colors.white, colors.green, 2)
+                sleep(1) -- Give time to see the notification
                 control.showProjectList()
             end)
         createBtn.bgColor = gui.getColor("success")
@@ -638,8 +642,12 @@ function control.showCreateProject()
                 y = tonumber(yInput.value) or 11
             }
             
-            local projectId = projectManager.create(projectType, name, config, startPos)
+            print("DEBUG: Creating project - Type: " .. projectType .. ", Name: " .. name)
+            local projectId, project = projectManager.create(projectType, name, config, startPos)
+            print("DEBUG: Project created with ID: " .. tostring(projectId))
+            print("DEBUG: Project object: " .. tostring(project))
             gui.notify("Project created: " .. name, colors.white, colors.green, 2)
+            sleep(1) -- Give time to see the notification
             
             control.showProjectList()
         end)
