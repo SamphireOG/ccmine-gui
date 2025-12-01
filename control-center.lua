@@ -477,23 +477,35 @@ function control.showCreateProject()
             local quarryBtn = gui.getComponent("typeQuarry")
             local stripBtn = gui.getComponent("typeStrip")
             
-            if branchBtn then branchBtn.bgColor = (selected == "branch_mine") and gui.getColor("primary") or colors.gray end
-            if quarryBtn then quarryBtn.bgColor = (selected == "quarry") and gui.getColor("primary") or colors.gray end
-            if stripBtn then stripBtn.bgColor = (selected == "strip_mine") and gui.getColor("primary") or colors.gray end
+            if branchBtn then
+                branchBtn.bgColor = (selected == "branch_mine") and gui.getColor("primary") or colors.gray
+                branchBtn.hoverBgColor = (selected == "branch_mine") and gui.getColor("primary") or colors.gray
+            end
+            if quarryBtn then
+                quarryBtn.bgColor = (selected == "quarry") and gui.getColor("primary") or colors.gray
+                quarryBtn.hoverBgColor = (selected == "quarry") and gui.getColor("primary") or colors.gray
+            end
+            if stripBtn then
+                stripBtn.bgColor = (selected == "strip_mine") and gui.getColor("primary") or colors.gray
+                stripBtn.hoverBgColor = (selected == "strip_mine") and gui.getColor("primary") or colors.gray
+            end
             gui.draw()
         end
         
         local branchBtn = components.createButton("typeBranch", formX, typeY, btnW, 1, "Branch",
             function() updateTypeButtons("branch_mine") end)
         branchBtn.bgColor = gui.getColor("primary")
+        branchBtn.hoverBgColor = gui.getColor("primary")
         
         local quarryBtn = components.createButton("typeQuarry", formX + btnW + 1, typeY, btnW, 1, "Quarry",
             function() updateTypeButtons("quarry") end)
         quarryBtn.bgColor = colors.gray
+        quarryBtn.hoverBgColor = colors.gray
         
         local stripBtn = components.createButton("typeStrip", formX + (btnW + 1) * 2, typeY, btnW, 1, "Strip",
             function() updateTypeButtons("strip_mine") end)
         stripBtn.bgColor = colors.gray
+        stripBtn.hoverBgColor = colors.gray
         
         -- Starting Position (compact)
         components.createLabel("posLbl", formX, formY + 6, "Start Pos:")
