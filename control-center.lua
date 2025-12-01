@@ -320,12 +320,16 @@ function control.showProjectList()
     local projects = projectManager.getAll()
     local count = 0
     
-    for id, project in pairs(projects) do
+    -- Debug: Print project count
+    print("DEBUG: Found " .. (projects and "table" or "nil") .. " projects")
+    for id, project in pairs(projects or {}) do
+        print("DEBUG: Adding project: " .. project.name)
         local itemText = string.format("%s (%s) - %d%%",
             project.name, project.type, project.progress.completion)
         projectList:addItem(itemText, project)
         count = count + 1
     end
+    print("DEBUG: Total count: " .. count)
     
     if count == 0 then
         local msgY = math.floor(panelY + panelH / 2)
