@@ -25,6 +25,13 @@ projectManager.STATUS = {
 local projects = {}
 local nextProjectNumber = 1
 
+-- Debug: Module load counter
+if not _G.projectManagerLoadCount then
+    _G.projectManagerLoadCount = 0
+end
+_G.projectManagerLoadCount = _G.projectManagerLoadCount + 1
+print("DEBUG: project-manager.lua loaded (count: " .. _G.projectManagerLoadCount .. ")")
+
 -- ========== PROJECT CREATION ==========
 
 function projectManager.create(projectType, name, config, startPos)
@@ -59,6 +66,11 @@ function projectManager.create(projectType, name, config, startPos)
     
     projects[projectId] = project
     nextProjectNumber = nextProjectNumber + 1
+    
+    -- Debug: Verify storage
+    local count = 0
+    for _ in pairs(projects) do count = count + 1 end
+    print("DEBUG: Project stored. Total projects in table: " .. count)
     
     return projectId, project
 end
@@ -154,6 +166,9 @@ function projectManager.get(projectId)
 end
 
 function projectManager.getAll()
+    local count = 0
+    for _ in pairs(projects) do count = count + 1 end
+    print("DEBUG: projectManager.getAll() called - returning " .. count .. " projects")
     return projects
 end
 
