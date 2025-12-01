@@ -813,14 +813,9 @@ function control.run()
                     gui.init()
                     control.updateDisplay()
                 elseif event == "key" then
-                    if p1 == keys.q and keys.leftCtrl then
-                        control.exit()
-                        break
-                    else
-                        -- Pass key events to GUI for text input
-                        local handled = gui.handleKey(p1)
-                        gui.draw()
-                    end
+                    -- Pass key events to GUI for text input
+                    local handled = gui.handleKey(p1)
+                    gui.draw()
                 elseif event == "char" then
                     -- Pass character events to GUI for text input
                     local handled = gui.handleChar(p1)
