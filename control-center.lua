@@ -513,7 +513,7 @@ function control.showCreateProject()
         local currentY = formY + 6
         
         -- Branch Mine specific fields
-        local mainInput, sideInput
+        local mainInput, sideInput, torchCheck, wallCheck
         if selectedType == "branch_mine" then
             components.createLabel("mainLbl", formX, currentY, "Main Length:")
             mainInput = components.createTextInput("main", formX + 13, currentY, 6, "64")
@@ -522,25 +522,8 @@ function control.showCreateProject()
             components.createLabel("sideLbl", formX, currentY, "Side Length:")
             sideInput = components.createTextInput("side", formX + 13, currentY, 6, "32")
             currentY = currentY + 2
-        else
-            currentY = currentY + 1
-        end
-        
-        -- Starting Position (compact)
-        components.createLabel("posLbl", formX, currentY, "Start Pos:")
-        currentY = currentY + 1
-        components.createLabel("xLbl", formX, currentY, "X:")
-        local xInput = components.createTextInput("x", formX + 3, currentY, 6, "0")
-        components.createLabel("yLbl", formX + 11, currentY, "Y:")
-        local yInput = components.createTextInput("y", formX + 14, currentY, 5, "11")
-        currentY = currentY + 1
-        components.createLabel("zLbl", formX, currentY, "Z:")
-        local zInput = components.createTextInput("z", formX + 3, currentY, 6, "0")
-        currentY = currentY + 2
-        
-        -- Branch Mine specific options
-        local torchCheck, wallCheck
-        if selectedType == "branch_mine" then
+            
+            -- Branch Mine options
             torchCheck = components.createCheckbox("torch", formX, currentY, "Torch", true)
             currentY = currentY + 1
             wallCheck = components.createCheckbox("wall", formX, currentY, "Wall Protect", true)
@@ -564,11 +547,8 @@ function control.showCreateProject()
                     config.wallProtection = wallCheck.checked
                 end
                 
-                local startPos = {
-                    x = tonumber(xInput.value) or 0,
-                    y = tonumber(yInput.value) or 11,
-                    z = tonumber(zInput.value) or 0
-                }
+                -- Starting position will be set automatically later
+                local startPos = nil
                 
                 local projectId = projectManager.create(selectedType, name, config, startPos)
                 gui.notify("Project created: " .. name, colors.white, colors.green, 2)
@@ -609,21 +589,10 @@ function control.showCreateProject()
     components.createLabel("sideLbl", formX, formY + 9, "Side Tunnel Length:")
     local sideInput = components.createTextInput("side", formX + 20, formY + 9, 8, "32")
     
-    -- Starting Position
-    components.createLabel("posLbl", formX, formY + 11, "Starting Position:")
-    components.createLabel("xLbl", formX + 2, formY + 12, "X:")
-    local xInput = components.createTextInput("x", formX + 5, formY + 12, 6, "0")
-    
-    components.createLabel("yLbl", formX + 13, formY + 12, "Y:")
-    local yInput = components.createTextInput("y", formX + 16, formY + 12, 6, "11")
-    
-    components.createLabel("zLbl", formX + 24, formY + 12, "Z:")
-    local zInput = components.createTextInput("z", formX + 27, formY + 12, 6, "0")
-    
     -- Branch Mine Options (only for type 1)
-    components.createLabel("optLbl", formX, formY + 14, "Branch Mine Options:")
-    local torchCheck = components.createCheckbox("torch", formX + 2, formY + 15, "Place Torches", true)
-    local wallCheck = components.createCheckbox("wall", formX + 2, formY + 16, "Wall Protection", true)
+    components.createLabel("optLbl", formX, formY + 11, "Branch Mine Options:")
+    local torchCheck = components.createCheckbox("torch", formX + 2, formY + 12, "Place Torches", true)
+    local wallCheck = components.createCheckbox("wall", formX + 2, formY + 13, "Wall Protection", true)
     
     -- Buttons
     local createBtn = components.createButton("create", formX, h - 3, 15, 2, "Create",
@@ -647,11 +616,8 @@ function control.showCreateProject()
                 config.wallProtection = wallCheck.checked
             end
             
-            local startPos = {
-                x = tonumber(xInput.value) or 0,
-                y = tonumber(yInput.value) or 11,
-                z = tonumber(zInput.value) or 0
-            }
+            -- Starting position will be set automatically later
+            local startPos = nil
             
             local projectId = projectManager.create(projectType, name, config, startPos)
             gui.notify("Project created: " .. name, colors.white, colors.green, 2)
