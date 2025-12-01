@@ -21,9 +21,17 @@ projectManager.STATUS = {
     CANCELLED = "cancelled"
 }
 
--- Internal storage
-local projects = {}
-local nextProjectNumber = 1
+-- Internal storage - Use global to persist across module reloads
+if not _G.CCMine_projects then
+    _G.CCMine_projects = {}
+    print("DEBUG: Initialized new global projects table")
+end
+local projects = _G.CCMine_projects
+
+if not _G.CCMine_nextProjectNumber then
+    _G.CCMine_nextProjectNumber = 1
+end
+local nextProjectNumber = _G.CCMine_nextProjectNumber
 
 -- Debug: Module load counter
 if not _G.projectManagerLoadCount then
@@ -66,11 +74,13 @@ function projectManager.create(projectType, name, config, startPos)
     
     projects[projectId] = project
     nextProjectNumber = nextProjectNumber + 1
+    _G.CCMine_nextProjectNumber = nextProjectNumber
     
     -- Debug: Verify storage
     local count = 0
     for _ in pairs(projects) do count = count + 1 end
     print("DEBUG: Project stored. Total projects in table: " .. count)
+    print("DEBUG: Global table has " .. count .. " projects")
     
     return projectId, project
 end
