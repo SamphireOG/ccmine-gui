@@ -438,6 +438,30 @@ function gui.findComponentAt(x, y)
     return found
 end
 
+-- ========== KEYBOARD HANDLING ==========
+
+function gui.handleKey(key)
+    -- Pass key events to focused component
+    if gui.state.focusedComponent then
+        local component = gui.state.components[gui.state.focusedComponent]
+        if component and component.handleKey then
+            component:handleKey(key)
+            gui.requestRedraw()
+        end
+    end
+end
+
+function gui.handleChar(char)
+    -- Pass character events to focused component
+    if gui.state.focusedComponent then
+        local component = gui.state.components[gui.state.focusedComponent]
+        if component and component.handleChar then
+            component:handleChar(char)
+            gui.requestRedraw()
+        end
+    end
+end
+
 -- ========== ERROR HANDLING ==========
 
 function gui.handleError(title, message)
