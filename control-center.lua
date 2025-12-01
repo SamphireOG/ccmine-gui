@@ -510,18 +510,41 @@ function control.showCreateProject()
         
         drawTypeButtons()
         
-        -- Starting Position (compact)
-        components.createLabel("posLbl", formX, formY + 6, "Start Pos:")
-        components.createLabel("xLbl", formX, formY + 7, "X:")
-        local xInput = components.createTextInput("x", formX + 3, formY + 7, 6, "0")
-        components.createLabel("yLbl", formX + 11, formY + 7, "Y:")
-        local yInput = components.createTextInput("y", formX + 14, formY + 7, 5, "11")
-        components.createLabel("zLbl", formX, formY + 8, "Z:")
-        local zInput = components.createTextInput("z", formX + 3, formY + 8, 6, "0")
+        local currentY = formY + 6
         
-        -- Options
-        local torchCheck = components.createCheckbox("torch", formX, formY + 10, "Torch", true)
-        local wallCheck = components.createCheckbox("wall", formX, formY + 11, "Wall Protect", true)
+        -- Branch Mine specific fields
+        local mainInput, sideInput
+        if selectedType == "branch_mine" then
+            components.createLabel("mainLbl", formX, currentY, "Main Length:")
+            mainInput = components.createTextInput("main", formX + 13, currentY, 6, "64")
+            currentY = currentY + 1
+            
+            components.createLabel("sideLbl", formX, currentY, "Side Length:")
+            sideInput = components.createTextInput("side", formX + 13, currentY, 6, "32")
+            currentY = currentY + 2
+        else
+            currentY = currentY + 1
+        end
+        
+        -- Starting Position (compact)
+        components.createLabel("posLbl", formX, currentY, "Start Pos:")
+        currentY = currentY + 1
+        components.createLabel("xLbl", formX, currentY, "X:")
+        local xInput = components.createTextInput("x", formX + 3, currentY, 6, "0")
+        components.createLabel("yLbl", formX + 11, currentY, "Y:")
+        local yInput = components.createTextInput("y", formX + 14, currentY, 5, "11")
+        currentY = currentY + 1
+        components.createLabel("zLbl", formX, currentY, "Z:")
+        local zInput = components.createTextInput("z", formX + 3, currentY, 6, "0")
+        currentY = currentY + 2
+        
+        -- Branch Mine specific options
+        local torchCheck, wallCheck
+        if selectedType == "branch_mine" then
+            torchCheck = components.createCheckbox("torch", formX, currentY, "Torch", true)
+            currentY = currentY + 1
+            wallCheck = components.createCheckbox("wall", formX, currentY, "Wall Protect", true)
+        end
         
         -- Buttons
         local btnW = math.floor((w - 5) / 2)
@@ -531,12 +554,16 @@ function control.showCreateProject()
             function()
                 local name = nameInput.value ~= "" and nameInput.value or "New Project"
                 
-                local config = {
-                    mainTunnelLength = 64,
-                    sideTunnelLength = 32,
-                    placeTorches = torchCheck.checked,
-                    wallProtection = wallCheck.checked
-                }
+                local config = {}
+                
+                -- Add branch mine specific config
+                if selectedType == "branch_mine" then
+                    config.mainTunnelLength = tonumber(mainInput.value) or 64
+                    config.sideTunnelLength = tonumber(sideInput.value) or 32
+                    config.placeTorches = torchCheck.checked
+                    config.wallProtection = wallCheck.checked
+                end
+                
                 local startPos = {
                     x = tonumber(xInput.value) or 0,
                     y = tonumber(yInput.value) or 11,
@@ -574,28 +601,29 @@ function control.showCreateProject()
     components.createLabel("type3", formX + 2, formY + 5, "3) Strip Mine")
     local typeInput = components.createTextInput("type", formX + 15, formY + 2, 5, "1")
     
-    -- Dimensions
-    components.createLabel("mainLbl", formX, formY + 7, "Main Tunnel Length:")
-    local mainInput = components.createTextInput("main", formX + 20, formY + 7, 8, "64")
+    -- Branch Mine Dimensions (only for type 1)
+    components.createLabel("branchNote", formX, formY + 7, "(Branch Mine settings below)")
+    components.createLabel("mainLbl", formX, formY + 8, "Main Tunnel Length:")
+    local mainInput = components.createTextInput("main", formX + 20, formY + 8, 8, "64")
     
-    components.createLabel("sideLbl", formX, formY + 8, "Side Tunnel Length:")
-    local sideInput = components.createTextInput("side", formX + 20, formY + 8, 8, "32")
+    components.createLabel("sideLbl", formX, formY + 9, "Side Tunnel Length:")
+    local sideInput = components.createTextInput("side", formX + 20, formY + 9, 8, "32")
     
     -- Starting Position
-    components.createLabel("posLbl", formX, formY + 10, "Starting Position:")
-    components.createLabel("xLbl", formX + 2, formY + 11, "X:")
-    local xInput = components.createTextInput("x", formX + 5, formY + 11, 6, "0")
+    components.createLabel("posLbl", formX, formY + 11, "Starting Position:")
+    components.createLabel("xLbl", formX + 2, formY + 12, "X:")
+    local xInput = components.createTextInput("x", formX + 5, formY + 12, 6, "0")
     
-    components.createLabel("yLbl", formX + 13, formY + 11, "Y:")
-    local yInput = components.createTextInput("y", formX + 16, formY + 11, 6, "11")
+    components.createLabel("yLbl", formX + 13, formY + 12, "Y:")
+    local yInput = components.createTextInput("y", formX + 16, formY + 12, 6, "11")
     
-    components.createLabel("zLbl", formX + 24, formY + 11, "Z:")
-    local zInput = components.createTextInput("z", formX + 27, formY + 11, 6, "0")
+    components.createLabel("zLbl", formX + 24, formY + 12, "Z:")
+    local zInput = components.createTextInput("z", formX + 27, formY + 12, 6, "0")
     
-    -- Options
-    components.createLabel("optLbl", formX, formY + 13, "Options:")
-    local torchCheck = components.createCheckbox("torch", formX + 2, formY + 14, "Place Torches", true)
-    local wallCheck = components.createCheckbox("wall", formX + 2, formY + 15, "Wall Protection", true)
+    -- Branch Mine Options (only for type 1)
+    components.createLabel("optLbl", formX, formY + 14, "Branch Mine Options:")
+    local torchCheck = components.createCheckbox("torch", formX + 2, formY + 15, "Place Torches", true)
+    local wallCheck = components.createCheckbox("wall", formX + 2, formY + 16, "Wall Protection", true)
     
     -- Buttons
     local createBtn = components.createButton("create", formX, h - 3, 15, 2, "Create",
@@ -609,12 +637,15 @@ function control.showCreateProject()
             local projectType = typeMap[typeInput.value] or "branch_mine"
             local name = nameInput.value ~= "" and nameInput.value or "New Project"
             
-            local config = {
-                mainTunnelLength = tonumber(mainInput.value) or 64,
-                sideTunnelLength = tonumber(sideInput.value) or 32,
-                placeTorches = torchCheck.checked,
-                wallProtection = wallCheck.checked
-            }
+            local config = {}
+            
+            -- Only add branch mine config if type is 1 (branch_mine)
+            if typeInput.value == "1" then
+                config.mainTunnelLength = tonumber(mainInput.value) or 64
+                config.sideTunnelLength = tonumber(sideInput.value) or 32
+                config.placeTorches = torchCheck.checked
+                config.wallProtection = wallCheck.checked
+            end
             
             local startPos = {
                 x = tonumber(xInput.value) or 0,
