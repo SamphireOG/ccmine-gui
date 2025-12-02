@@ -12,6 +12,9 @@ local zoneAllocator = require("zone-allocator")
 
 local control = {}
 
+-- Version number (incremented with each release)
+control.VERSION = "1.2"
+
 -- ========== STATE ==========
 
 control.state = {
@@ -48,10 +51,15 @@ function control.showDashboard()
     gui.clearComponents()
     gui.clear()
     
-    -- Title
+    -- Title with version
+    local w, h = layouts.getScreenSize()
     gui.centerText("CCMine Control Center", 1, gui.getColor("primary"), colors.white)
     
-    local w, h = layouts.getScreenSize()
+    -- Version in top right
+    term.setCursorPos(w - 4, 1)
+    term.setBackgroundColor(gui.getColor("primary"))
+    term.setTextColor(colors.lightGray)
+    term.write("v" .. control.VERSION)
     
     -- Detect pocket computer (smaller screen)
     local isPocket = (w < 40)
