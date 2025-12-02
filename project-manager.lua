@@ -410,6 +410,7 @@ function projectManager.delete(projectId)
     end
     
     projects[projectId] = nil
+    saveToFile()
     return true
 end
 

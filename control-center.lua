@@ -13,7 +13,7 @@ local zoneAllocator = require("zone-allocator")
 local control = {}
 
 -- Version number (incremented with each release)
-control.VERSION = "1.4"
+control.VERSION = "1.5"
 
 -- ========== STATE ==========
 
@@ -453,7 +453,7 @@ function control.showProjectDetail()
         
         local deleteBtn = components.createButton("delete", btnW + 3, btnY, btnW, 2, "Delete",
             function()
-                projectManager.cancel(project.id)
+                projectManager.delete(project.id)
                 gui.notify("Deleted", colors.white, colors.red, 1)
                 control.showProjectList()
             end)
@@ -519,7 +519,7 @@ function control.showProjectDetail()
     
     local deleteBtn = components.createButton("delete", 28, 15, 11, 2, "Delete",
         function()
-            projectManager.cancel(project.id)
+            projectManager.delete(project.id)
             gui.notify("Project deleted", colors.white, colors.red, 2)
             control.showProjectList()
         end)
