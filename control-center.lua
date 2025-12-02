@@ -310,16 +310,18 @@ function control.showProjectList()
     local listPanel = components.createPanel("list", panelX, panelY, panelW, panelH, "All Projects")
     listPanel.borderColor = gui.getColor("border")
     
-    local listX = panelX + 2
-    local listY = panelY + 2
+    local listX = 2
+    local listY = 2
     local listW = panelW - 4
     local listH = panelH - 4
     
     local projectList = components.createList("projectList", listX, listY, listW, listH)
+    listPanel:addChild(projectList)
     
     local projects = projectManager.getAll()
     local count = 0
     
+    -- Add projects to list
     for id, project in pairs(projects or {}) do
         local itemText = string.format("%s (%s) - %d%%",
             project.name, project.type, project.progress.completion)
@@ -327,9 +329,11 @@ function control.showProjectList()
         count = count + 1
     end
     
+    -- Show message if no projects
     if count == 0 then
-        local msgY = math.floor(panelY + panelH / 2)
-        components.createLabel("noProjects", listX, msgY, "No projects created")
+        local msgY = math.floor(panelH / 2)
+        local noProjectsLabel = components.createLabel("noProjects", listX, msgY, "No projects created")
+        listPanel:addChild(noProjectsLabel)
     end
     
     -- Selection handler
