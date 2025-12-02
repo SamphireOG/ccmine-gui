@@ -13,7 +13,7 @@ local zoneAllocator = require("zone-allocator")
 local control = {}
 
 -- Version number (incremented with each release)
-control.VERSION = "1.5"
+control.VERSION = "1.6"
 
 -- ========== STATE ==========
 
@@ -374,6 +374,179 @@ function control.showProjectList()
     gui.draw()
 end
 
+-- ========== PROJECT CONTROL SCREEN ==========
+
+function control.showProjectControl()
+    if not control.state.selectedProject then
+        control.showProjectList()
+        return
+    end
+    
+    control.state.currentScreen = "projectControl"
+    term.clear()
+    term.setCursorPos(1, 1)
+    gui.clearComponents()
+    gui.clear()
+    
+    local project = control.state.selectedProject
+    local w, h = layouts.getScreenSize()
+    local isPocket = (w < 40)
+    
+    -- Title with project name
+    gui.centerText(project.name, 1, gui.getColor("primary"), colors.white)
+    
+    if isPocket then
+        -- Pocket computer layout - Action focused
+        local btnW = w - 4
+        local btnX = 2
+        local currentY = 3
+        
+        -- Status indicator
+        local statusColor = project.status == "active" and colors.green or 
+                           project.status == "paused" and colors.orange or colors.gray
+        term.setCursorPos(2, currentY)
+        term.setBackgroundColor(colors.black)
+        term.setTextColor(statusColor)
+        term.write("Status: " .. project.status:upper())
+        currentY = currentY + 2
+        
+        -- Link Turtle button
+        local linkBtn = components.createButton("link", btnX, currentY, btnW, 2, "Link Turtle",
+            function()
+                gui.notify("Select turtle to link", colors.white, colors.blue, 2)
+                -- TODO: Show turtle selection
+            end)
+        linkBtn.bgColor = gui.getColor("primary")
+        currentY = currentY + 3
+        
+        -- Start/Pause/Resume button
+        if project.status == "active" then
+            local pauseBtn = components.createButton("pause", btnX, currentY, btnW, 2, "Pause Project",
+                function()
+                    projectManager.pause(project.id)
+                    control.state.selectedProject.status = "paused"
+                    gui.notify("Paused", colors.white, colors.orange, 1)
+                    control.showProjectControl()
+                end)
+            pauseBtn.bgColor = gui.getColor("warning")
+        elseif project.status == "paused" then
+            local resumeBtn = components.createButton("resume", btnX, currentY, btnW, 2, "Resume Project",
+                function()
+                    projectManager.resume(project.id)
+                    control.state.selectedProject.status = "active"
+                    gui.notify("Resumed", colors.white, colors.green, 1)
+                    control.showProjectControl()
+                end)
+            resumeBtn.bgColor = gui.getColor("success")
+        else
+            local startBtn = components.createButton("start", btnX, currentY, btnW, 2, "Start Project",
+                function()
+                    projectManager.resume(project.id)
+                    control.state.selectedProject.status = "active"
+                    gui.notify("Started", colors.white, colors.green, 1)
+                    control.showProjectControl()
+                end)
+            startBtn.bgColor = gui.getColor("success")
+        end
+        currentY = currentY + 3
+        
+        -- Details button
+        local detailsBtn = components.createButton("details", btnX, currentY, btnW, 2, "View Details",
+            function()
+                control.showProjectDetail()
+            end)
+        currentY = currentY + 3
+        
+        -- Delete button
+        local deleteBtn = components.createButton("delete", btnX, currentY, btnW, 2, "Delete Project",
+            function()
+                projectManager.delete(project.id)
+                gui.notify("Deleted", colors.white, colors.red, 1)
+                control.showProjectList()
+            end)
+        deleteBtn.bgColor = gui.getColor("error")
+        
+        -- Back button
+        local backBtn = components.createButton("back", btnX, h - 2, btnW, 2, "Back",
+            function() control.showProjectList() end)
+        
+        gui.draw()
+        return
+    end
+    
+    -- Regular computer layout - Action focused
+    local btnW = 20
+    local btnX = math.floor((w - btnW) / 2)
+    local currentY = 4
+    
+    -- Status indicator
+    local statusColor = project.status == "active" and colors.green or 
+                       project.status == "paused" and colors.orange or colors.gray
+    term.setCursorPos(btnX, currentY)
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(statusColor)
+    term.write("Status: " .. project.status:upper())
+    currentY = currentY + 2
+    
+    -- Link Turtle button
+    local linkBtn = components.createButton("link", btnX, currentY, btnW, 2, "Link Turtle",
+        function()
+            gui.notify("Select turtle to link", colors.white, colors.blue, 2)
+        end)
+    linkBtn.bgColor = gui.getColor("primary")
+    currentY = currentY + 3
+    
+    -- Start/Pause/Resume button
+    if project.status == "active" then
+        local pauseBtn = components.createButton("pause", btnX, currentY, btnW, 2, "Pause Project",
+            function()
+                projectManager.pause(project.id)
+                control.state.selectedProject.status = "paused"
+                control.showProjectControl()
+            end)
+        pauseBtn.bgColor = gui.getColor("warning")
+    elseif project.status == "paused" then
+        local resumeBtn = components.createButton("resume", btnX, currentY, btnW, 2, "Resume Project",
+            function()
+                projectManager.resume(project.id)
+                control.state.selectedProject.status = "active"
+                control.showProjectControl()
+            end)
+        resumeBtn.bgColor = gui.getColor("success")
+    else
+        local startBtn = components.createButton("start", btnX, currentY, btnW, 2, "Start Project",
+            function()
+                projectManager.resume(project.id)
+                control.state.selectedProject.status = "active"
+                control.showProjectControl()
+            end)
+        startBtn.bgColor = gui.getColor("success")
+    end
+    currentY = currentY + 3
+    
+    -- Details button
+    local detailsBtn = components.createButton("details", btnX, currentY, btnW, 2, "View Details",
+        function()
+            control.showProjectDetail()
+        end)
+    currentY = currentY + 3
+    
+    -- Delete button
+    local deleteBtn = components.createButton("delete", btnX, currentY, btnW, 2, "Delete Project",
+        function()
+            projectManager.delete(project.id)
+            gui.notify("Deleted", colors.white, colors.red, 2)
+            control.showProjectList()
+        end)
+    deleteBtn.bgColor = gui.getColor("error")
+    
+    -- Back button
+    local backBtn = components.createButton("back", btnX, h - 2, btnW, 2, "Back",
+        function() control.showProjectList() end)
+    
+    gui.draw()
+end
+
 -- ========== PROJECT DETAIL SCREEN ==========
 
 function control.showProjectDetail()
@@ -396,11 +569,11 @@ function control.showProjectDetail()
     gui.centerText("Project Details", 1, gui.getColor("primary"), colors.white)
     
     if isPocket then
-        -- Pocket computer layout
+        -- Pocket computer layout - Info focused
         local panelW = w - 2
         
         -- Info Panel (compact)
-        local infoPanel = components.createPanel("info", 1, 3, panelW, 7, project.name)
+        local infoPanel = components.createPanel("info", 1, 3, panelW, 10, project.name)
         infoPanel.borderColor = gui.getColor("border")
         
         -- Shorten type name
@@ -409,67 +582,31 @@ function control.showProjectDetail()
         components.createLabel("status", 3, 6, "Status: " .. project.status)
         components.createLabel("blocks", 3, 7, "Blocks: " .. project.progress.blocksCleared)
         components.createLabel("ore", 3, 8, "Ore: " .. project.progress.oreFound)
+        components.createLabel("progress", 3, 9, "Progress: " .. project.progress.completion .. "%")
         
         -- Assigned Turtles
         local turtleCount = 0
         for _ in pairs(project.assignedTurtles) do
             turtleCount = turtleCount + 1
         end
-        components.createLabel("turtles", 3, 9, "Turtles: " .. turtleCount)
+        components.createLabel("turtles", 3, 10, "Turtles: " .. turtleCount)
         
-        -- Action buttons (compact row)
-        local btnW = math.floor((w - 4) / 2)
-        local btnY = 11
-        
-        if project.status == "active" then
-            local pauseBtn = components.createButton("pause", 2, btnY, btnW, 2, "Pause",
-                function()
-                    projectManager.pause(project.id)
-                    control.state.selectedProject.status = "paused"
-                    gui.notify("Paused", colors.white, colors.orange, 1)
-                    control.showProjectDetail()
-                end)
-            pauseBtn.bgColor = gui.getColor("warning")
-        elseif project.status == "paused" then
-            local resumeBtn = components.createButton("resume", 2, btnY, btnW, 2, "Resume",
-                function()
-                    projectManager.resume(project.id)
-                    control.state.selectedProject.status = "active"
-                    gui.notify("Resumed", colors.white, colors.green, 1)
-                    control.showProjectDetail()
-                end)
-            resumeBtn.bgColor = gui.getColor("success")
-        else
-            -- Pending - show Start button
-            local startBtn = components.createButton("start", 2, btnY, btnW, 2, "Start",
-                function()
-                    projectManager.resume(project.id)
-                    control.state.selectedProject.status = "active"
-                    gui.notify("Started", colors.white, colors.green, 1)
-                    control.showProjectDetail()
-                end)
-            startBtn.bgColor = gui.getColor("success")
+        -- Config info if branch mine
+        if project.config and project.config.mainTunnelLength then
+            components.createLabel("config", 3, 11, "Main: " .. project.config.mainTunnelLength .. " Side: " .. (project.config.sideTunnelLength or "?"))
         end
-        
-        local deleteBtn = components.createButton("delete", btnW + 3, btnY, btnW, 2, "Delete",
-            function()
-                projectManager.delete(project.id)
-                gui.notify("Deleted", colors.white, colors.red, 1)
-                control.showProjectList()
-            end)
-        deleteBtn.bgColor = gui.getColor("error")
         
         -- Back button
         local backBtn = components.createButton("back", 2, h - 2, w - 3, 2, "Back",
-            function() control.showProjectList() end)
+            function() control.showProjectControl() end)
         
         gui.draw()
         return
     end
     
-    -- Regular computer layout (original)
+    -- Regular computer layout - Info focused
     -- Info Panel
-    local infoPanel = components.createPanel("info", 2, 3, 47, 9, project.name)
+    local infoPanel = components.createPanel("info", 2, 3, 47, 12, project.name)
     infoPanel.borderColor = gui.getColor("border")
     
     components.createLabel("type", 4, 5, string.format("Type: %s", project.type))
@@ -491,39 +628,19 @@ function control.showProjectDetail()
     components.createLabel("turtles", 4, 11,
         string.format("Assigned Turtles: %d", turtleCount))
     
-    -- Actions
-    local actionsPanel = components.createPanel("actions", 2, 13, 47, 5, "Actions")
-    actionsPanel.borderColor = gui.getColor("border")
-    
-    if project.status == "active" then
-        local pauseBtn = components.createButton("pause", 4, 15, 11, 2, "Pause",
-            function()
-                projectManager.pause(project.id)
-                gui.notify("Project paused", colors.white, colors.orange, 2)
-            end)
-        pauseBtn.bgColor = gui.getColor("warning")
-    elseif project.status == "paused" then
-        local resumeBtn = components.createButton("resume", 4, 15, 11, 2, "Resume",
-            function()
-                projectManager.resume(project.id)
-                gui.notify("Project resumed", colors.white, colors.green, 2)
-            end)
-        resumeBtn.bgColor = gui.getColor("success")
+    -- Config info
+    if project.config then
+        local configStr = ""
+        if project.config.mainTunnelLength then
+            configStr = "Main: " .. project.config.mainTunnelLength .. ", Side: " .. (project.config.sideTunnelLength or "?")
+        end
+        if project.config.placeTorches then
+            configStr = configStr .. ", Torches: Yes"
+        end
+        if #configStr > 0 then
+            components.createLabel("config", 4, 13, configStr)
+        end
     end
-    
-    local coordBtn = components.createButton("coord", 16, 15, 11, 2, "Broadcast",
-        function()
-            coordinator.broadcastCoordination(project.id)
-            gui.notify("Sent coordination update", colors.white, colors.blue, 2)
-        end)
-    
-    local deleteBtn = components.createButton("delete", 28, 15, 11, 2, "Delete",
-        function()
-            projectManager.delete(project.id)
-            gui.notify("Project deleted", colors.white, colors.red, 2)
-            control.showProjectList()
-        end)
-    deleteBtn.bgColor = gui.getColor("error")
     
     -- Back button
     local backBtn = components.createButton("back", 19, 19, 13, 2, "Back",
@@ -905,7 +1022,7 @@ function control.run()
                             local projectList = control.state.projectListItems
                             if projectList and projectList[itemIndex] then
                                 control.state.selectedProject = projectList[itemIndex]
-                                control.showProjectDetail()
+                                control.showProjectControl()  -- Go to control screen first
                             end
                         end
                     end
