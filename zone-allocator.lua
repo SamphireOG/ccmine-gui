@@ -340,7 +340,13 @@ end
 -- ========== ZONE INFO HELPERS ==========
 
 function zoneAllocator.getZoneBoundaries(project, zoneNumber)
-    local startPos = project.startPos or {x = 0, y = 11, z = 0}
+    -- Ensure startPos has all coordinates with defaults
+    local rawStartPos = project.startPos or {}
+    local startPos = {
+        x = rawStartPos.x or 0,
+        y = rawStartPos.y or 11,
+        z = rawStartPos.z or 0
+    }
     local config = project.config or {}
     
     if project.type == "branch_mine" then
@@ -349,10 +355,10 @@ function zoneAllocator.getZoneBoundaries(project, zoneNumber)
         local zStart = startPos.z + ((zoneNumber - 1) * branchSpacing * 2)
         
         return {
-            minX = (startPos.x or 0) - branchLength - 5,
-            maxX = (startPos.x or 0) + branchLength + 5,
-            minY = (startPos.y or 11) - 3,
-            maxY = (startPos.y or 11) + 3,
+            minX = startPos.x - branchLength - 5,
+            maxX = startPos.x + branchLength + 5,
+            minY = startPos.y - 3,
+            maxY = startPos.y + 3,
             minZ = zStart,
             maxZ = zStart + (branchSpacing * 2)
         }
@@ -362,34 +368,34 @@ function zoneAllocator.getZoneBoundaries(project, zoneNumber)
         local sliceStart = (zoneNumber - 1) * sliceWidth
         
         return {
-            minX = (startPos.x or 0) + sliceStart,
-            maxX = (startPos.x or 0) + sliceStart + sliceWidth - 1,
+            minX = startPos.x + sliceStart,
+            maxX = startPos.x + sliceStart + sliceWidth - 1,
             minY = config.minY or 5,
-            maxY = startPos.y or 64,
-            minZ = startPos.z or 0,
-            maxZ = (startPos.z or 0) + (config.length or 16) - 1
+            maxY = startPos.y,
+            minZ = startPos.z,
+            maxZ = startPos.z + (config.length or 16) - 1
         }
     elseif project.type == "strip_mine" then
         local tunnelSpacing = config.tunnelSpacing or 3
         local tunnelLength = config.mainTunnelLength or config.tunnelLength or 64
-        local zStart = (startPos.z or 0) + ((zoneNumber - 1) * tunnelSpacing)
+        local zStart = startPos.z + ((zoneNumber - 1) * tunnelSpacing)
         
         return {
-            minX = startPos.x or 0,
-            maxX = (startPos.x or 0) + tunnelLength,
-            minY = (startPos.y or 11) - 3,
-            maxY = (startPos.y or 11) + 3,
+            minX = startPos.x,
+            maxX = startPos.x + tunnelLength,
+            minY = startPos.y - 3,
+            maxY = startPos.y + 3,
             minZ = zStart,
             maxZ = zStart + 2
         }
     else
         return {
-            minX = (startPos.x or 0) - 50,
-            maxX = (startPos.x or 0) + 50,
-            minY = (startPos.y or 11) - 50,
-            maxY = (startPos.y or 11) + 50,
-            minZ = (startPos.z or 0) - 50,
-            maxZ = (startPos.z or 0) + 50
+            minX = startPos.x - 50,
+            maxX = startPos.x + 50,
+            minY = startPos.y - 50,
+            maxY = startPos.y + 50,
+            minZ = startPos.z - 50,
+            maxZ = startPos.z + 50
         }
     end
 end
