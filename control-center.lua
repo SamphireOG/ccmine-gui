@@ -13,7 +13,7 @@ local zoneAllocator = require("zone-allocator")
 local control = {}
 
 -- Version number (incremented with each release)
-control.VERSION = "1.2"
+control.VERSION = "1.3"
 
 -- ========== STATE ==========
 
@@ -329,26 +329,33 @@ function control.showProjectList()
     local projects = projectManager.getAll()
     local count = 0
     
+    -- Store items for click handling
+    control.state.projectListItems = {}
+    control.state.currentScreen = "projects"
+    
     -- Add projects to list with better formatting
     for id, project in pairs(projects or {}) do
         -- Shorten type name
         local typeShort = project.type:gsub("_mine", ""):gsub("branch", "Branch"):gsub("quarry", "Quarry"):gsub("strip", "Strip")
         local itemText = string.format("%s [%s] %d%%", project.name, typeShort, project.progress.completion)
         projectList:addItem(itemText, project)
+        table.insert(control.state.projectListItems, project)
         count = count + 1
     end
+    
+    -- Store bounds for click detection (absolute screen coordinates)
+    control.state.projectListBounds = {
+        x = panelX + listX,
+        y = panelY + listY,
+        w = listW,
+        h = math.min(listH, count)
+    }
     
     -- Show message if no projects
     if count == 0 then
         local msgY = math.floor(panelH / 2)
         local noProjectsLabel = components.createLabel("noProjects", listX, msgY, "No projects created")
         listPanel:addChild(noProjectsLabel)
-    end
-    
-    -- Selection handler
-    projectList.onSelect = function(item)
-        control.state.selectedProject = item.data
-        control.showProjectDetail()
     end
     
     -- Buttons
@@ -799,15 +806,46 @@ function control.run()
                 local event, p1, p2, p3 = os.pullEvent()
                 
                 if event == "mouse_click" then
+                    local x, y = p2, p3
+                    
                     -- Check if clicked on type button (in Create Project screen)
                     if control.state.typeButtons and control.state.currentScreen == "create_project" then
-                        local x, y = p2, p3
                         for _, btn in ipairs(control.state.typeButtons) do
                             if y == btn.y and x >= btn.x1 and x <= btn.x2 then
                                 -- Update selection and redraw
                                 control.state.selectedType = btn.type
                                 control.showCreateProject()
                                 break
+                            end
+                        end
+                    end
+                    
+                    -- Check if clicked on project list
+                    if control.state.currentScreen == "projects" and control.state.projectListBounds then
+                        local bounds = control.state.projectListBounds
+                        if x >= bounds.x and x < bounds.x + bounds.w and
+                           y >= bounds.y and y < bounds.y + bounds.h then
+                            -- Calculate which item was clicked
+                            local itemIndex = y - bounds.y + 1
+                            local projectList = control.state.projectListItems
+                            if projectList and projectList[itemIndex] then
+                                control.state.selectedProject = projectList[itemIndex]
+                                control.showProjectDetail()
+                            end
+                        end
+                    end
+                    
+                    -- Check if clicked on turtle list
+                    if control.state.currentScreen == "turtles" and control.state.turtleListBounds then
+                        local bounds = control.state.turtleListBounds
+                        if x >= bounds.x and x < bounds.x + bounds.w and
+                           y >= bounds.y and y < bounds.y + bounds.h then
+                            -- Calculate which item was clicked
+                            local itemIndex = y - bounds.y + 1
+                            local turtleList = control.state.turtleListItems
+                            if turtleList and turtleList[itemIndex] then
+                                control.state.selectedTurtle = turtleList[itemIndex]
+                                control.showTurtleDetail()
                             end
                         end
                     end
