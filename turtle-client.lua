@@ -171,12 +171,19 @@ function client.handleProjectAssignment(data)
     
     state.currentProject = data.projectId
     state.currentAssignment = data.assignment
-    state.status = "assigned"
-    
-    -- Store project for reference
     state.projectData = data.project
     
-    print("Instructions: " .. data.assignment.instructions)
+    -- Check if we should wait for start or begin immediately
+    if data.waitForStart then
+        state.status = "assigned"
+        print("Waiting for start command...")
+    else
+        state.status = "working"
+        print("Starting immediately...")
+        os.queueEvent("project_start", data.projectId)
+    end
+    
+    print("Instructions: " .. (data.assignment.instructions or "None"))
 end
 
 function client.handleCoordResponse(data)
@@ -200,11 +207,40 @@ function client.handleCommand(data)
         print("Coordinator requested re-registration")
         client.registerWithCoordinator()
         
-    elseif command == "unassign" then
-        print("Unassigned from project")
+    elseif command == "discover" then
+        -- Respond to discovery broadcast
+        if state.connected and state.coordinatorId then
+            client.sendHeartbeat()
+        else
+            -- Try to register with the coordinator that sent discovery
+            if data.coordinatorId then
+                state.coordinatorId = data.coordinatorId
+                client.registerWithCoordinator()
+            end
+        end
+        
+    elseif command == "unassign" or command == "unlink" then
+        print("Unlinked from project")
         state.currentProject = nil
         state.currentAssignment = nil
+        state.projectData = nil
         state.status = "idle"
+        
+    elseif command == "start" then
+        -- Start working on assigned project
+        if state.currentProject and state.currentAssignment then
+            print("Starting work on project!")
+            state.status = "working"
+            -- Trigger mining start (will be handled by main loop)
+            os.queueEvent("project_start", state.currentProject)
+        else
+            print("Cannot start - no project assigned")
+        end
+        
+    elseif command == "stop" then
+        print("Stop command received")
+        state.status = "assigned"
+        os.queueEvent("project_stop")
         
     elseif command == "return_home" then
         print("Return home command received")
@@ -213,10 +249,14 @@ function client.handleCommand(data)
     elseif command == "pause" then
         print("Pause command received")
         state.status = "paused"
+        os.queueEvent("project_pause")
         
     elseif command == "resume" then
         print("Resume command received")
-        state.status = "working"
+        if state.currentProject then
+            state.status = "working"
+            os.queueEvent("project_resume")
+        end
         
     else
         print("Unknown command: " .. command)

@@ -344,6 +344,203 @@ function coordinator.run()
     )
 end
 
+-- ========== DISCOVERY ==========
+
+function coordinator.discoverTurtles()
+    -- Broadcast discovery request
+    protocol.broadcast(protocol.MSG_TYPES.COMMAND, {
+        command = "discover",
+        coordinatorId = os.getComputerID()
+    })
+    
+    print("Discovery broadcast sent")
+    return true
+end
+
+function coordinator.getOnlineTurtles()
+    local online = {}
+    local currentTime = os.epoch("utc")
+    
+    for id, turtle in pairs(state.registry) do
+        -- Consider online if heartbeat within 2 minutes
+        local timeSince = (currentTime - turtle.lastHeartbeat) / 1000
+        if timeSince < 120 then
+            turtle.online = true
+            online[id] = turtle
+        else
+            turtle.online = false
+        end
+    end
+    
+    return online
+end
+
+function coordinator.getIdleTurtles()
+    local idle = {}
+    local online = coordinator.getOnlineTurtles()
+    
+    for id, turtle in pairs(online) do
+        if turtle.status == "idle" and not turtle.currentProject then
+            idle[id] = turtle
+        end
+    end
+    
+    return idle
+end
+
+function coordinator.linkTurtleToProject(turtleId, projectId)
+    local turtle = state.registry[turtleId]
+    if not turtle then
+        return false, "Turtle not found"
+    end
+    
+    if turtle.currentProject then
+        return false, "Turtle already assigned to a project"
+    end
+    
+    local project = projectManager.get(projectId)
+    if not project then
+        return false, "Project not found"
+    end
+    
+    -- Get zone count for this project type
+    local maxZones = 4 -- Default
+    if project.type == "branch_mine" then
+        maxZones = 4 -- 2 left, 2 right
+    elseif project.type == "quarry" then
+        maxZones = 8 -- 8 vertical slices
+    elseif project.type == "strip_mine" then
+        maxZones = 6 -- 6 parallel tunnels
+    end
+    
+    -- Count current turtles
+    local currentCount = 0
+    for _ in pairs(project.assignedTurtles or {}) do
+        currentCount = currentCount + 1
+    end
+    
+    if currentCount >= maxZones then
+        return false, "Project at max capacity (" .. maxZones .. " turtles)"
+    end
+    
+    -- Allocate zone
+    local zone = currentCount + 1
+    local assignment = {
+        zone = zone,
+        boundaries = zoneAllocator.getZoneBoundaries(project, zone),
+        instructions = zoneAllocator.getZoneInstructions(project, zone)
+    }
+    
+    -- Assign to project
+    projectManager.assign(turtleId, projectId, "miner", zone)
+    
+    -- Update turtle state
+    turtle.currentProject = projectId
+    turtle.status = "assigned"
+    turtle.zone = zone
+    
+    -- Send assignment to turtle (they wait for start command)
+    protocol.send(turtleId, protocol.MSG_TYPES.PROJECT_ASSIGN, {
+        projectId = projectId,
+        project = project,
+        assignment = assignment,
+        waitForStart = true
+    }, projectId)
+    
+    print(string.format("Linked Turtle %d to '%s' (Zone %d/%d)", 
+        turtleId, project.name, zone, maxZones))
+    
+    return true, zone
+end
+
+function coordinator.unlinkTurtle(turtleId)
+    local turtle = state.registry[turtleId]
+    if not turtle then
+        return false, "Turtle not found"
+    end
+    
+    if not turtle.currentProject then
+        return false, "Turtle not assigned to any project"
+    end
+    
+    local projectId = turtle.currentProject
+    projectManager.unassign(turtleId, projectId)
+    
+    turtle.currentProject = nil
+    turtle.status = "idle"
+    turtle.zone = nil
+    
+    -- Notify turtle
+    protocol.send(turtleId, protocol.MSG_TYPES.COMMAND, {
+        command = "unlink"
+    })
+    
+    print(string.format("Unlinked Turtle %d", turtleId))
+    return true
+end
+
+function coordinator.startProject(projectId)
+    local project = projectManager.get(projectId)
+    if not project then
+        return false, "Project not found"
+    end
+    
+    -- Count assigned turtles
+    local turtleCount = 0
+    for _ in pairs(project.assignedTurtles or {}) do
+        turtleCount = turtleCount + 1
+    end
+    
+    if turtleCount == 0 then
+        return false, "No turtles linked to project"
+    end
+    
+    -- Update project status
+    projectManager.resume(projectId)
+    
+    -- Send start command to all linked turtles
+    for turtleId in pairs(project.assignedTurtles) do
+        protocol.send(turtleId, protocol.MSG_TYPES.COMMAND, {
+            command = "start",
+            projectId = projectId
+        }, projectId)
+        
+        -- Update turtle status
+        local turtle = state.registry[turtleId]
+        if turtle then
+            turtle.status = "working"
+        end
+    end
+    
+    print(string.format("Started project '%s' with %d turtles", project.name, turtleCount))
+    return true
+end
+
+function coordinator.getProjectTurtles(projectId)
+    local project = projectManager.get(projectId)
+    if not project then
+        return {}
+    end
+    
+    local turtles = {}
+    for turtleId, assignment in pairs(project.assignedTurtles or {}) do
+        local turtle = state.registry[turtleId]
+        if turtle then
+            turtles[turtleId] = {
+                id = turtleId,
+                label = turtle.label,
+                status = turtle.status,
+                zone = assignment.zone or turtle.zone,
+                fuel = turtle.fuel,
+                position = turtle.position,
+                online = turtle.online
+            }
+        end
+    end
+    
+    return turtles
+end
+
 -- ========== STATISTICS ==========
 
 function coordinator.getStats()

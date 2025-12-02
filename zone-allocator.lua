@@ -337,6 +337,89 @@ function zoneAllocator.visualizeBoundaries(boundaries, width, height)
     return visual
 end
 
+-- ========== ZONE INFO HELPERS ==========
+
+function zoneAllocator.getZoneBoundaries(project, zoneNumber)
+    local startPos = project.startPos or {x = 0, y = 11, z = 0}
+    local config = project.config or {}
+    
+    if project.type == "branch_mine" then
+        local branchSpacing = config.branchSpacing or 4
+        local branchLength = config.sideTunnelLength or config.branchLength or 32
+        local zStart = startPos.z + ((zoneNumber - 1) * branchSpacing * 2)
+        
+        return {
+            minX = (startPos.x or 0) - branchLength - 5,
+            maxX = (startPos.x or 0) + branchLength + 5,
+            minY = (startPos.y or 11) - 3,
+            maxY = (startPos.y or 11) + 3,
+            minZ = zStart,
+            maxZ = zStart + (branchSpacing * 2)
+        }
+    elseif project.type == "quarry" then
+        local width = config.width or 16
+        local sliceWidth = math.ceil(width / 8)
+        local sliceStart = (zoneNumber - 1) * sliceWidth
+        
+        return {
+            minX = (startPos.x or 0) + sliceStart,
+            maxX = (startPos.x or 0) + sliceStart + sliceWidth - 1,
+            minY = config.minY or 5,
+            maxY = startPos.y or 64,
+            minZ = startPos.z or 0,
+            maxZ = (startPos.z or 0) + (config.length or 16) - 1
+        }
+    elseif project.type == "strip_mine" then
+        local tunnelSpacing = config.tunnelSpacing or 3
+        local tunnelLength = config.mainTunnelLength or config.tunnelLength or 64
+        local zStart = (startPos.z or 0) + ((zoneNumber - 1) * tunnelSpacing)
+        
+        return {
+            minX = startPos.x or 0,
+            maxX = (startPos.x or 0) + tunnelLength,
+            minY = (startPos.y or 11) - 3,
+            maxY = (startPos.y or 11) + 3,
+            minZ = zStart,
+            maxZ = zStart + 2
+        }
+    else
+        return {
+            minX = (startPos.x or 0) - 50,
+            maxX = (startPos.x or 0) + 50,
+            minY = (startPos.y or 11) - 50,
+            maxY = (startPos.y or 11) + 50,
+            minZ = (startPos.z or 0) - 50,
+            maxZ = (startPos.z or 0) + 50
+        }
+    end
+end
+
+function zoneAllocator.getZoneInstructions(project, zoneNumber)
+    if project.type == "branch_mine" then
+        local side = (zoneNumber % 2 == 1) and "left" or "right"
+        local branchNum = math.ceil(zoneNumber / 2)
+        return string.format("Mine branch %d on %s side", branchNum, side)
+    elseif project.type == "quarry" then
+        return string.format("Excavate slice %d", zoneNumber)
+    elseif project.type == "strip_mine" then
+        return string.format("Mine tunnel %d", zoneNumber)
+    else
+        return string.format("Zone %d - Await instructions", zoneNumber)
+    end
+end
+
+function zoneAllocator.getMaxZones(project)
+    if project.type == "branch_mine" then
+        return 4  -- 2 left, 2 right
+    elseif project.type == "quarry" then
+        return 8  -- 8 vertical slices
+    elseif project.type == "strip_mine" then
+        return 6  -- 6 parallel tunnels
+    else
+        return 4  -- Default
+    end
+end
+
 -- ========== UTILITIES ==========
 
 function zoneAllocator.calculateDistance(pos1, pos2)

@@ -13,7 +13,7 @@ local zoneAllocator = require("zone-allocator")
 local control = {}
 
 -- Version number (incremented with each release)
-control.VERSION = "1.6"
+control.VERSION = "2.0"
 
 -- ========== STATE ==========
 
@@ -172,59 +172,103 @@ function control.showTurtleList()
     local w, h = layouts.getScreenSize()
     local isPocket = (w < 40)
     
+    -- Trigger discovery
+    coordinator.discoverTurtles()
+    
     -- Turtle List Panel
     local panelW = isPocket and (w - 1) or 47
-    local panelH = isPocket and (h - 6) or 15
+    local panelH = isPocket and (h - 9) or 12
     local panelX = isPocket and 1 or 2
     local panelY = 3
     
-    local listPanel = components.createPanel("list", panelX, panelY, panelW, panelH, "All Turtles")
+    local listPanel = components.createPanel("list", panelX, panelY, panelW, panelH, "Online Turtles")
     listPanel.borderColor = gui.getColor("border")
     
-    local listX = panelX + 2
-    local listY = panelY + 2
-    local listW = panelW - 4
-    local listH = panelH - 4
-    
-    local turtleList = components.createList("turtleList", listX, listY, listW, listH)
-    
-    local turtles = coordinator.getAllTurtles()
+    -- Get online turtles
+    local turtles = coordinator.getOnlineTurtles()
     local count = 0
     
+    -- Store for click detection
+    control.state.turtleListItems = {}
+    control.state.turtleListBounds = {
+        x = panelX + 2,
+        y = panelY + 2,
+        w = panelW - 4,
+        h = panelH - 4
+    }
+    
+    -- Draw turtles manually for better control
+    local listY = panelY + 2
     for id, turtle in pairs(turtles) do
-        local statusColor = ""
-        if turtle.status == "working" then
-            statusColor = "W"
-        elseif turtle.status == "idle" then
-            statusColor = "I"
-        elseif turtle.status == "lost" then
-            statusColor = "L"
+        if listY < panelY + panelH - 1 then
+            -- Status indicator
+            local statusChar = "?"
+            local statusColor = colors.gray
+            if turtle.status == "working" then
+                statusChar = "W"
+                statusColor = colors.blue
+            elseif turtle.status == "assigned" then
+                statusChar = "A"
+                statusColor = colors.cyan
+            elseif turtle.status == "idle" then
+                statusChar = "I"
+                statusColor = colors.green
+            elseif turtle.status == "lost" then
+                statusChar = "X"
+                statusColor = colors.red
+            end
+            
+            term.setCursorPos(panelX + 2, listY)
+            term.setBackgroundColor(colors.black)
+            term.setTextColor(statusColor)
+            term.write("[" .. statusChar .. "]")
+            term.setTextColor(colors.white)
+            
+            local label = turtle.label or ("Turtle-" .. id)
+            if isPocket then
+                term.write(" " .. label:sub(1, 12))
+            else
+                term.write(string.format(" %s (F:%d)", label:sub(1, 16), turtle.fuel))
+            end
+            
+            table.insert(control.state.turtleListItems, turtle)
+            listY = listY + 1
+            count = count + 1
         end
-        
-        local itemText = string.format("[%s] %d: %s (Fuel: %d)", 
-            statusColor, id, turtle.label, turtle.fuel)
-        turtleList:addItem(itemText, turtle)
-        count = count + 1
     end
+    
+    -- Update bounds height
+    control.state.turtleListBounds.h = count
     
     if count == 0 then
         local msgY = math.floor(panelY + panelH / 2)
-        components.createLabel("noTurtles", listX, msgY, "No turtles registered")
+        term.setCursorPos(panelX + 2, msgY)
+        term.setBackgroundColor(colors.black)
+        term.setTextColor(colors.gray)
+        term.write("No turtles online")
+        term.setCursorPos(panelX + 2, msgY + 1)
+        term.write("Waiting for connections...")
     end
     
-    -- Selection handler
-    turtleList.onSelect = function(item)
-        control.state.selectedTurtle = item.data
-        control.showTurtleDetail()
+    -- Buttons
+    local btnY = h - 5
+    local btnW = isPocket and math.floor((w - 4) / 2) or 13
+    
+    if isPocket then
+        local refreshBtn = components.createButton("refresh", 2, btnY, btnW, 2, "Refresh",
+            function() control.showTurtleList() end)
+        refreshBtn.bgColor = gui.getColor("primary")
+        
+        local backBtn = components.createButton("back", btnW + 3, btnY, btnW, 2, "Back",
+            function() control.showDashboard() end)
+    else
+        local refreshBtn = components.createButton("refresh", 4, 16, 13, 2, "Refresh",
+            function() control.showTurtleList() end)
+        refreshBtn.bgColor = gui.getColor("primary")
+        
+        local backBtn = components.createButton("back", 34, 16, 13, 2, "Back",
+            function() control.showDashboard() end)
     end
-    
-    -- Back button
-    local btnW = isPocket and (w - 3) or 13
-    local btnX = isPocket and 2 or 19
-    local btnY = h - 2
-    
-    local backBtn = components.createButton("back", btnX, btnY, btnW, 2, "Back",
-        function() control.showDashboard() end)
     
     gui.draw()
 end
@@ -244,51 +288,162 @@ function control.showTurtleDetail()
     gui.clear()
     
     local turtle = control.state.selectedTurtle
+    local w, h = layouts.getScreenSize()
+    local isPocket = (w < 40)
     
     -- Title
-    gui.centerText("Turtle Details", 1, gui.getColor("primary"), colors.white)
+    local title = turtle.label or ("Turtle " .. turtle.id)
+    gui.centerText(title, 1, gui.getColor("primary"), colors.white)
     
+    if isPocket then
+        -- Pocket layout
+        local currentY = 3
+        
+        -- Status with color
+        local statusColor = turtle.status == "idle" and colors.green or
+                           turtle.status == "working" and colors.blue or
+                           turtle.status == "assigned" and colors.cyan or colors.gray
+        term.setCursorPos(2, currentY)
+        term.setBackgroundColor(colors.black)
+        term.setTextColor(statusColor)
+        term.write("Status: " .. turtle.status:upper())
+        currentY = currentY + 1
+        
+        term.setTextColor(colors.white)
+        term.setCursorPos(2, currentY)
+        term.write("ID: " .. turtle.id .. "  Fuel: " .. turtle.fuel)
+        currentY = currentY + 1
+        
+        term.setCursorPos(2, currentY)
+        term.write(string.format("Pos: %d,%d,%d", 
+            turtle.position.x, turtle.position.y, turtle.position.z))
+        currentY = currentY + 2
+        
+        -- Current project
+        if turtle.currentProject then
+            local project = projectManager.get(turtle.currentProject)
+            if project then
+                term.setCursorPos(2, currentY)
+                term.setTextColor(colors.yellow)
+                term.write("Project: " .. project.name:sub(1, 15))
+                term.setTextColor(colors.white)
+                currentY = currentY + 1
+                
+                if turtle.zone then
+                    term.setCursorPos(2, currentY)
+                    term.write("Zone: " .. turtle.zone)
+                end
+            end
+        else
+            term.setCursorPos(2, currentY)
+            term.setTextColor(colors.gray)
+            term.write("No project assigned")
+            term.setTextColor(colors.white)
+        end
+        currentY = currentY + 2
+        
+        -- Action buttons
+        local btnW = w - 4
+        local btnX = 2
+        
+        if turtle.currentProject then
+            -- Unlink button
+            local unlinkBtn = components.createButton("unlink", btnX, currentY, btnW, 2, "Unlink",
+                function()
+                    coordinator.unlinkTurtle(turtle.id)
+                    gui.notify("Unlinked", colors.white, colors.orange, 1)
+                    control.state.selectedTurtle.currentProject = nil
+                    control.state.selectedTurtle.zone = nil
+                    control.state.selectedTurtle.status = "idle"
+                    control.showTurtleDetail()
+                end)
+            unlinkBtn.bgColor = gui.getColor("warning")
+        else
+            -- Assign button
+            local assignBtn = components.createButton("assign", btnX, currentY, btnW, 2, "Assign to Project",
+                function() control.showAssignProject() end)
+            assignBtn.bgColor = gui.getColor("primary")
+        end
+        currentY = currentY + 3
+        
+        -- Return home button
+        local homeBtn = components.createButton("home", btnX, currentY, btnW, 2, "Return Home",
+            function()
+                coordinator.sendCommand(turtle.id, "return_home")
+                gui.notify("Sent home", colors.white, colors.green, 1)
+            end)
+        
+        -- Back button
+        local backBtn = components.createButton("back", btnX, h - 2, btnW, 2, "Back",
+            function() control.showTurtleList() end)
+        
+        gui.draw()
+        return
+    end
+    
+    -- Regular computer layout
     -- Info Panel
-    local infoPanel = components.createPanel("info", 2, 3, 47, 10, turtle.label)
+    local infoPanel = components.createPanel("info", 2, 3, 47, 8, "Info")
     infoPanel.borderColor = gui.getColor("border")
     
-    components.createLabel("id", 4, 5, string.format("ID: %d", turtle.id))
-    components.createLabel("status", 4, 6, string.format("Status: %s", turtle.status))
-    components.createLabel("fuel", 4, 7, string.format("Fuel: %d", turtle.fuel))
-    components.createLabel("inv", 4, 8, string.format("Inventory: %d/16", turtle.inventory))
-    components.createLabel("pos", 4, 9,
+    -- Status with color
+    local statusColor = turtle.status == "idle" and colors.green or
+                       turtle.status == "working" and colors.blue or
+                       turtle.status == "assigned" and colors.cyan or colors.gray
+    term.setCursorPos(4, 5)
+    term.setBackgroundColor(colors.black)
+    term.write("ID: " .. turtle.id .. "   Status: ")
+    term.setTextColor(statusColor)
+    term.write(turtle.status:upper())
+    term.setTextColor(colors.white)
+    
+    components.createLabel("fuel", 4, 6, string.format("Fuel: %d", turtle.fuel))
+    components.createLabel("inv", 4, 7, string.format("Inventory: %d/16 slots used", turtle.inventory))
+    components.createLabel("pos", 4, 8,
         string.format("Position: X:%d Y:%d Z:%d", 
             turtle.position.x, turtle.position.y, turtle.position.z))
     
+    -- Project info
     if turtle.currentProject then
         local project = projectManager.get(turtle.currentProject)
         if project then
-            components.createLabel("proj", 4, 10,
-                string.format("Project: %s", project.name))
+            components.createLabel("proj", 4, 9,
+                string.format("Project: %s (Zone %d)", project.name, turtle.zone or 0))
         end
+    else
+        local noProj = components.createLabel("proj", 4, 9, "Project: None assigned")
+        noProj.fgColor = colors.gray
     end
     
-    -- Actions
-    local actionsPanel = components.createPanel("actions", 2, 14, 47, 4, "Actions")
+    -- Actions Panel
+    local actionsPanel = components.createPanel("actions", 2, 12, 47, 5, "Actions")
     actionsPanel.borderColor = gui.getColor("border")
     
-    local assignBtn = components.createButton("assign", 4, 16, 13, 1, "Assign Project",
-        function() control.showAssignProject() end)
+    if turtle.currentProject then
+        local unlinkBtn = components.createButton("unlink", 4, 14, 13, 2, "Unlink",
+            function()
+                coordinator.unlinkTurtle(turtle.id)
+                gui.notify("Turtle unlinked", colors.white, colors.orange, 2)
+                control.state.selectedTurtle.currentProject = nil
+                control.state.selectedTurtle.zone = nil
+                control.state.selectedTurtle.status = "idle"
+                control.showTurtleDetail()
+            end)
+        unlinkBtn.bgColor = gui.getColor("warning")
+    else
+        local assignBtn = components.createButton("assign", 4, 14, 13, 2, "Assign",
+            function() control.showAssignProject() end)
+        assignBtn.bgColor = gui.getColor("primary")
+    end
     
-    local homeBtn = components.createButton("home", 18, 16, 13, 1, "Return Home",
+    local homeBtn = components.createButton("home", 18, 14, 13, 2, "Return Home",
         function()
             coordinator.sendCommand(turtle.id, "return_home")
-            gui.notify("Sent return home command", colors.white, colors.green, 2)
-        end)
-    
-    local unassignBtn = components.createButton("unassign", 32, 16, 13, 1, "Unassign",
-        function()
-            coordinator.unassignFromProject(turtle.id)
-            gui.notify("Turtle unassigned", colors.white, colors.orange, 2)
+            gui.notify("Sent return home", colors.white, colors.green, 2)
         end)
     
     -- Back button
-    local backBtn = components.createButton("back", 19, 19, 13, 2, "Back",
+    local backBtn = components.createButton("back", 34, 14, 11, 2, "Back",
         function() control.showTurtleList() end)
     
     gui.draw()
@@ -392,11 +547,19 @@ function control.showProjectControl()
     local w, h = layouts.getScreenSize()
     local isPocket = (w < 40)
     
+    -- Get linked turtles
+    local linkedTurtles = coordinator.getProjectTurtles(project.id)
+    local turtleCount = 0
+    for _ in pairs(linkedTurtles) do
+        turtleCount = turtleCount + 1
+    end
+    local maxZones = zoneAllocator.getMaxZones(project)
+    
     -- Title with project name
     gui.centerText(project.name, 1, gui.getColor("primary"), colors.white)
     
     if isPocket then
-        -- Pocket computer layout - Action focused
+        -- Pocket computer layout
         local btnW = w - 4
         local btnX = 2
         local currentY = 3
@@ -407,66 +570,84 @@ function control.showProjectControl()
         term.setCursorPos(2, currentY)
         term.setBackgroundColor(colors.black)
         term.setTextColor(statusColor)
-        term.write("Status: " .. project.status:upper())
+        term.write(project.status:upper())
+        term.setTextColor(colors.white)
+        term.write(string.format(" | %d/%d turtles", turtleCount, maxZones))
         currentY = currentY + 2
         
-        -- Link Turtle button
-        local linkBtn = components.createButton("link", btnX, currentY, btnW, 2, "Link Turtle",
-            function()
-                gui.notify("Select turtle to link", colors.white, colors.blue, 2)
-                -- TODO: Show turtle selection
-            end)
-        linkBtn.bgColor = gui.getColor("primary")
-        currentY = currentY + 3
-        
-        -- Start/Pause/Resume button
-        if project.status == "active" then
-            local pauseBtn = components.createButton("pause", btnX, currentY, btnW, 2, "Pause Project",
-                function()
-                    projectManager.pause(project.id)
-                    control.state.selectedProject.status = "paused"
-                    gui.notify("Paused", colors.white, colors.orange, 1)
-                    control.showProjectControl()
-                end)
-            pauseBtn.bgColor = gui.getColor("warning")
-        elseif project.status == "paused" then
-            local resumeBtn = components.createButton("resume", btnX, currentY, btnW, 2, "Resume Project",
-                function()
-                    projectManager.resume(project.id)
-                    control.state.selectedProject.status = "active"
-                    gui.notify("Resumed", colors.white, colors.green, 1)
-                    control.showProjectControl()
-                end)
-            resumeBtn.bgColor = gui.getColor("success")
+        -- Show linked turtles (compact)
+        if turtleCount > 0 then
+            for id, turtle in pairs(linkedTurtles) do
+                if currentY < 8 then
+                    local statusChar = turtle.status == "working" and "W" or 
+                                      turtle.status == "assigned" and "A" or "?"
+                    term.setCursorPos(2, currentY)
+                    term.write(string.format("[Z%d] %s (%s)", 
+                        turtle.zone or 0, 
+                        (turtle.label or "T"..id):sub(1,8), 
+                        statusChar))
+                    currentY = currentY + 1
+                end
+            end
         else
-            local startBtn = components.createButton("start", btnX, currentY, btnW, 2, "Start Project",
-                function()
-                    projectManager.resume(project.id)
-                    control.state.selectedProject.status = "active"
-                    gui.notify("Started", colors.white, colors.green, 1)
-                    control.showProjectControl()
-                end)
-            startBtn.bgColor = gui.getColor("success")
+            term.setCursorPos(2, currentY)
+            term.setTextColor(colors.gray)
+            term.write("No turtles linked")
+            term.setTextColor(colors.white)
         end
-        currentY = currentY + 3
+        currentY = currentY + 1
         
-        -- Details button
-        local detailsBtn = components.createButton("details", btnX, currentY, btnW, 2, "View Details",
-            function()
-                control.showProjectDetail()
-            end)
-        currentY = currentY + 3
+        -- Link Turtle button
+        if turtleCount < maxZones then
+            local linkBtn = components.createButton("link", btnX, currentY, btnW, 2, "+ Link Turtle",
+                function() control.showLinkTurtlePicker() end)
+            linkBtn.bgColor = gui.getColor("primary")
+            currentY = currentY + 3
+        else
+            currentY = currentY + 1
+        end
         
-        -- Delete button
-        local deleteBtn = components.createButton("delete", btnX, currentY, btnW, 2, "Delete Project",
+        -- Start/Pause button (only if turtles linked)
+        if turtleCount > 0 then
+            if project.status == "active" then
+                local pauseBtn = components.createButton("pause", btnX, currentY, btnW, 2, "Pause",
+                    function()
+                        projectManager.pause(project.id)
+                        control.state.selectedProject.status = "paused"
+                        control.showProjectControl()
+                    end)
+                pauseBtn.bgColor = gui.getColor("warning")
+            else
+                local startBtn = components.createButton("start", btnX, currentY, btnW, 2, "Start",
+                    function()
+                        local success, err = coordinator.startProject(project.id)
+                        if success then
+                            control.state.selectedProject.status = "active"
+                            gui.notify("Started!", colors.white, colors.green, 1)
+                        else
+                            gui.notify(err or "Failed", colors.white, colors.red, 2)
+                        end
+                        control.showProjectControl()
+                    end)
+                startBtn.bgColor = gui.getColor("success")
+            end
+            currentY = currentY + 3
+        end
+        
+        -- Bottom buttons (two rows)
+        local halfW = math.floor((w - 5) / 2)
+        local btnY = h - 5
+        
+        local detailsBtn = components.createButton("details", btnX, btnY, halfW, 2, "Details",
+            function() control.showProjectDetail() end)
+        
+        local deleteBtn = components.createButton("delete", btnX + halfW + 1, btnY, halfW, 2, "Delete",
             function()
                 projectManager.delete(project.id)
-                gui.notify("Deleted", colors.white, colors.red, 1)
                 control.showProjectList()
             end)
         deleteBtn.bgColor = gui.getColor("error")
         
-        -- Back button
         local backBtn = components.createButton("back", btnX, h - 2, btnW, 2, "Back",
             function() control.showProjectList() end)
         
@@ -474,65 +655,93 @@ function control.showProjectControl()
         return
     end
     
-    -- Regular computer layout - Action focused
-    local btnW = 20
-    local btnX = math.floor((w - btnW) / 2)
-    local currentY = 4
+    -- Regular computer layout
+    -- Left side: Status and turtles
+    local leftPanel = components.createPanel("status", 2, 3, 25, 10, "Status")
+    leftPanel.borderColor = gui.getColor("border")
     
-    -- Status indicator
+    -- Status
     local statusColor = project.status == "active" and colors.green or 
                        project.status == "paused" and colors.orange or colors.gray
-    term.setCursorPos(btnX, currentY)
+    term.setCursorPos(4, 5)
     term.setBackgroundColor(colors.black)
     term.setTextColor(statusColor)
-    term.write("Status: " .. project.status:upper())
-    currentY = currentY + 2
+    term.write(project.status:upper())
+    term.setTextColor(colors.white)
+    
+    -- Turtle count
+    term.setCursorPos(4, 6)
+    term.write(string.format("Turtles: %d/%d", turtleCount, maxZones))
+    
+    -- List linked turtles
+    local turtleY = 8
+    for id, turtle in pairs(linkedTurtles) do
+        if turtleY < 12 then
+            local statusChar = turtle.status == "working" and "W" or 
+                              turtle.status == "assigned" and "A" or "?"
+            term.setCursorPos(4, turtleY)
+            term.write(string.format("[Z%d] %s (%s)", 
+                turtle.zone or 0, 
+                (turtle.label or "Turtle-"..id):sub(1,10), 
+                statusChar))
+            turtleY = turtleY + 1
+        end
+    end
+    
+    if turtleCount == 0 then
+        term.setCursorPos(4, 8)
+        term.setTextColor(colors.gray)
+        term.write("No turtles linked")
+        term.setTextColor(colors.white)
+    end
+    
+    -- Right side: Actions
+    local rightPanel = components.createPanel("actions", 28, 3, 21, 10, "Actions")
+    rightPanel.borderColor = gui.getColor("border")
+    
+    local btnX = 30
+    local btnW = 17
+    local currentY = 5
     
     -- Link Turtle button
-    local linkBtn = components.createButton("link", btnX, currentY, btnW, 2, "Link Turtle",
-        function()
-            gui.notify("Select turtle to link", colors.white, colors.blue, 2)
-        end)
-    linkBtn.bgColor = gui.getColor("primary")
-    currentY = currentY + 3
-    
-    -- Start/Pause/Resume button
-    if project.status == "active" then
-        local pauseBtn = components.createButton("pause", btnX, currentY, btnW, 2, "Pause Project",
-            function()
-                projectManager.pause(project.id)
-                control.state.selectedProject.status = "paused"
-                control.showProjectControl()
-            end)
-        pauseBtn.bgColor = gui.getColor("warning")
-    elseif project.status == "paused" then
-        local resumeBtn = components.createButton("resume", btnX, currentY, btnW, 2, "Resume Project",
-            function()
-                projectManager.resume(project.id)
-                control.state.selectedProject.status = "active"
-                control.showProjectControl()
-            end)
-        resumeBtn.bgColor = gui.getColor("success")
-    else
-        local startBtn = components.createButton("start", btnX, currentY, btnW, 2, "Start Project",
-            function()
-                projectManager.resume(project.id)
-                control.state.selectedProject.status = "active"
-                control.showProjectControl()
-            end)
-        startBtn.bgColor = gui.getColor("success")
+    if turtleCount < maxZones then
+        local linkBtn = components.createButton("link", btnX, currentY, btnW, 2, "+ Link Turtle",
+            function() control.showLinkTurtlePicker() end)
+        linkBtn.bgColor = gui.getColor("primary")
+        currentY = currentY + 3
     end
-    currentY = currentY + 3
     
-    -- Details button
-    local detailsBtn = components.createButton("details", btnX, currentY, btnW, 2, "View Details",
-        function()
-            control.showProjectDetail()
-        end)
-    currentY = currentY + 3
+    -- Start/Pause button
+    if turtleCount > 0 then
+        if project.status == "active" then
+            local pauseBtn = components.createButton("pause", btnX, currentY, btnW, 2, "Pause",
+                function()
+                    projectManager.pause(project.id)
+                    control.state.selectedProject.status = "paused"
+                    control.showProjectControl()
+                end)
+            pauseBtn.bgColor = gui.getColor("warning")
+        else
+            local startBtn = components.createButton("start", btnX, currentY, btnW, 2, "Start Project",
+                function()
+                    local success, err = coordinator.startProject(project.id)
+                    if success then
+                        control.state.selectedProject.status = "active"
+                        gui.notify("Project started!", colors.white, colors.green, 2)
+                    else
+                        gui.notify(err or "Failed to start", colors.white, colors.red, 2)
+                    end
+                    control.showProjectControl()
+                end)
+            startBtn.bgColor = gui.getColor("success")
+        end
+    end
     
-    -- Delete button
-    local deleteBtn = components.createButton("delete", btnX, currentY, btnW, 2, "Delete Project",
+    -- Bottom buttons
+    local detailsBtn = components.createButton("details", 4, 14, 13, 2, "Details",
+        function() control.showProjectDetail() end)
+    
+    local deleteBtn = components.createButton("delete", 18, 14, 13, 2, "Delete",
         function()
             projectManager.delete(project.id)
             gui.notify("Deleted", colors.white, colors.red, 2)
@@ -540,8 +749,7 @@ function control.showProjectControl()
         end)
     deleteBtn.bgColor = gui.getColor("error")
     
-    -- Back button
-    local backBtn = components.createButton("back", btnX, h - 2, btnW, 2, "Back",
+    local backBtn = components.createButton("back", 32, 14, 13, 2, "Back",
         function() control.showProjectList() end)
     
     gui.draw()
@@ -859,6 +1067,128 @@ function control.showCreateProject()
     gui.draw()
 end
 
+-- ========== LINK TURTLE PICKER SCREEN ==========
+
+function control.showLinkTurtlePicker()
+    if not control.state.selectedProject then
+        control.showProjectList()
+        return
+    end
+    
+    control.state.currentScreen = "linkTurtle"
+    term.clear()
+    term.setCursorPos(1, 1)
+    gui.clearComponents()
+    gui.clear()
+    
+    local project = control.state.selectedProject
+    local w, h = layouts.getScreenSize()
+    local isPocket = (w < 40)
+    
+    -- Title
+    gui.centerText("Link Turtle", 1, gui.getColor("primary"), colors.white)
+    
+    -- Get idle turtles
+    local idleTurtles = coordinator.getIdleTurtles()
+    local count = 0
+    
+    -- Store for click detection
+    control.state.linkTurtleItems = {}
+    
+    if isPocket then
+        -- Pocket layout
+        term.setCursorPos(2, 3)
+        term.setBackgroundColor(colors.black)
+        term.setTextColor(colors.yellow)
+        term.write("To: " .. project.name:sub(1, 16))
+        term.setTextColor(colors.white)
+        
+        local listY = 5
+        control.state.linkTurtleBounds = {
+            x = 2, y = listY, w = w - 3, h = 0
+        }
+        
+        for id, turtle in pairs(idleTurtles) do
+            if listY < h - 4 then
+                term.setCursorPos(2, listY)
+                term.setTextColor(colors.green)
+                term.write("[I]")
+                term.setTextColor(colors.white)
+                term.write(" " .. (turtle.label or "Turtle-"..id):sub(1, 15))
+                
+                table.insert(control.state.linkTurtleItems, turtle)
+                listY = listY + 1
+                count = count + 1
+            end
+        end
+        
+        control.state.linkTurtleBounds.h = count
+        
+        if count == 0 then
+            term.setCursorPos(2, 6)
+            term.setTextColor(colors.gray)
+            term.write("No idle turtles")
+            term.setCursorPos(2, 7)
+            term.write("available to link")
+            term.setTextColor(colors.white)
+        end
+        
+        -- Back button
+        local backBtn = components.createButton("back", 2, h - 2, w - 3, 2, "Cancel",
+            function() control.showProjectControl() end)
+        
+        gui.draw()
+        return
+    end
+    
+    -- Regular computer layout
+    local listPanel = components.createPanel("list", 2, 3, 47, 13, "Available Turtles (Idle)")
+    listPanel.borderColor = gui.getColor("border")
+    
+    term.setCursorPos(4, 4)
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.yellow)
+    term.write("Linking to: " .. project.name)
+    term.setTextColor(colors.white)
+    
+    local listY = 6
+    control.state.linkTurtleBounds = {
+        x = 4, y = listY, w = 43, h = 0
+    }
+    
+    for id, turtle in pairs(idleTurtles) do
+        if listY < 14 then
+            term.setCursorPos(4, listY)
+            term.setTextColor(colors.green)
+            term.write("[IDLE]")
+            term.setTextColor(colors.white)
+            term.write(string.format(" %s (ID:%d, Fuel:%d)", 
+                (turtle.label or "Turtle"):sub(1, 15), id, turtle.fuel))
+            
+            table.insert(control.state.linkTurtleItems, turtle)
+            listY = listY + 1
+            count = count + 1
+        end
+    end
+    
+    control.state.linkTurtleBounds.h = count
+    
+    if count == 0 then
+        term.setCursorPos(4, 8)
+        term.setTextColor(colors.gray)
+        term.write("No idle turtles available to link")
+        term.setCursorPos(4, 9)
+        term.write("Turtles must be online and not assigned")
+        term.setTextColor(colors.white)
+    end
+    
+    -- Back button
+    local backBtn = components.createButton("back", 19, 17, 13, 2, "Cancel",
+        function() control.showProjectControl() end)
+    
+    gui.draw()
+end
+
 -- ========== ASSIGN PROJECT SCREEN ==========
 
 function control.showAssignProject()
@@ -1038,6 +1368,27 @@ function control.run()
                             if turtleList and turtleList[itemIndex] then
                                 control.state.selectedTurtle = turtleList[itemIndex]
                                 control.showTurtleDetail()
+                            end
+                        end
+                    end
+                    
+                    -- Check if clicked on link turtle picker
+                    if control.state.currentScreen == "linkTurtle" and control.state.linkTurtleBounds then
+                        local bounds = control.state.linkTurtleBounds
+                        if x >= bounds.x and x < bounds.x + bounds.w and
+                           y >= bounds.y and y < bounds.y + bounds.h then
+                            local itemIndex = y - bounds.y + 1
+                            local turtleList = control.state.linkTurtleItems
+                            if turtleList and turtleList[itemIndex] then
+                                local turtle = turtleList[itemIndex]
+                                local project = control.state.selectedProject
+                                local success, zoneOrErr = coordinator.linkTurtleToProject(turtle.id, project.id)
+                                if success then
+                                    gui.notify("Linked to zone " .. zoneOrErr, colors.white, colors.green, 2)
+                                else
+                                    gui.notify(zoneOrErr or "Failed", colors.white, colors.red, 2)
+                                end
+                                control.showProjectControl()
                             end
                         end
                     end
