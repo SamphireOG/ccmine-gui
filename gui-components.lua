@@ -565,7 +565,12 @@ function List:new(id, x, y, width, height)
     obj.bgColor = gui.getColor("background")
     obj.fgColor = gui.getColor("foreground")
     obj.selectedBgColor = gui.getColor("primary")
-    obj.hoverBgColor = gui.getColor("hover")
+    obj.hoverBgColor = gui.getColor("secondary")
+    
+    -- Handle click events
+    obj:on("click", function(self, x, y)
+        self:handleClick(x, y)
+    end)
     
     return obj
 end
@@ -591,23 +596,49 @@ function List:draw()
     local startIdx = self.scrollOffset + 1
     local endIdx = math.min(startIdx + visibleItems - 1, #self.items)
     
+    -- Draw background for entire list area
+    gui.screen.term.setBackgroundColor(self.bgColor)
+    for row = 0, self.height - 1 do
+        gui.screen.term.setCursorPos(absX, absY + row)
+        gui.screen.term.write(string.rep(" ", self.width))
+    end
+    
     for i = startIdx, endIdx do
         local item = self.items[i]
         local itemY = absY + ((i - startIdx) * self.itemHeight)
         
-        -- Determine background color
+        -- Determine background color (alternating + selection)
         local bgColor = self.bgColor
         if i == self.selectedIndex then
             bgColor = self.selectedBgColor
+        elseif i % 2 == 0 then
+            bgColor = self.hoverBgColor  -- Alternating row color
         end
         
         gui.screen.term.setCursorPos(absX, itemY)
         gui.screen.term.setBackgroundColor(bgColor)
         gui.screen.term.setTextColor(self.fgColor)
         
-        local displayText = gui.truncateText(item.text, self.width)
+        -- Format: bullet point + text
+        local displayText = "> " .. gui.truncateText(item.text, self.width - 2)
         displayText = displayText .. string.rep(" ", self.width - #displayText)
         gui.screen.term.write(displayText)
+    end
+    
+    -- Draw scrollbar if needed
+    if #self.items > visibleItems then
+        local scrollbarHeight = math.max(1, math.floor(visibleItems * visibleItems / #self.items))
+        local scrollbarPos = math.floor(self.scrollOffset * (visibleItems - scrollbarHeight) / math.max(1, #self.items - visibleItems))
+        
+        for row = 0, visibleItems - 1 do
+            gui.screen.term.setCursorPos(absX + self.width - 1, absY + row)
+            if row >= scrollbarPos and row < scrollbarPos + scrollbarHeight then
+                gui.screen.term.setBackgroundColor(colors.lightGray)
+            else
+                gui.screen.term.setBackgroundColor(colors.gray)
+            end
+            gui.screen.term.write(" ")
+        end
     end
 end
 

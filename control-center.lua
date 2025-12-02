@@ -321,10 +321,11 @@ function control.showProjectList()
     local projects = projectManager.getAll()
     local count = 0
     
-    -- Add projects to list
+    -- Add projects to list with better formatting
     for id, project in pairs(projects or {}) do
-        local itemText = string.format("%s (%s) - %d%%",
-            project.name, project.type, project.progress.completion)
+        -- Shorten type name
+        local typeShort = project.type:gsub("_mine", ""):gsub("branch", "Branch"):gsub("quarry", "Quarry"):gsub("strip", "Strip")
+        local itemText = string.format("%s [%s] %d%%", project.name, typeShort, project.progress.completion)
         projectList:addItem(itemText, project)
         count = count + 1
     end
