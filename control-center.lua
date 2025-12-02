@@ -320,16 +320,12 @@ function control.showProjectList()
     local projects = projectManager.getAll()
     local count = 0
     
-    -- Debug: Print project count
-    print("DEBUG: Found " .. (projects and "table" or "nil") .. " projects")
     for id, project in pairs(projects or {}) do
-        print("DEBUG: Adding project: " .. project.name)
         local itemText = string.format("%s (%s) - %d%%",
             project.name, project.type, project.progress.completion)
         projectList:addItem(itemText, project)
         count = count + 1
     end
-    print("DEBUG: Total count: " .. count)
     
     if count == 0 then
         local msgY = math.floor(panelY + panelH / 2)
@@ -563,12 +559,8 @@ function control.showCreateProject()
                     y = tonumber(yInput.value) or 11
                 }
                 
-                print("DEBUG: Creating project - Type: " .. selectedType .. ", Name: " .. name)
                 local projectId, project = projectManager.create(selectedType, name, config, startPos)
-                print("DEBUG: Project created with ID: " .. tostring(projectId))
-                print("DEBUG: Project object: " .. tostring(project))
                 gui.notify("Project created: " .. name, colors.white, colors.green, 2)
-                sleep(1) -- Give time to see the notification
                 control.showProjectList()
             end)
         createBtn.bgColor = gui.getColor("success")
@@ -642,12 +634,8 @@ function control.showCreateProject()
                 y = tonumber(yInput.value) or 11
             }
             
-            print("DEBUG: Creating project - Type: " .. projectType .. ", Name: " .. name)
             local projectId, project = projectManager.create(projectType, name, config, startPos)
-            print("DEBUG: Project created with ID: " .. tostring(projectId))
-            print("DEBUG: Project object: " .. tostring(project))
             gui.notify("Project created: " .. name, colors.white, colors.green, 2)
-            sleep(1) -- Give time to see the notification
             
             control.showProjectList()
         end)

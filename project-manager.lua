@@ -29,13 +29,11 @@ local nextProjectNumber = 1
 -- Load projects from file
 local function loadFromFile()
     if not fs.exists(PROJECTS_FILE) then
-        print("DEBUG: No saved projects file found")
         return
     end
     
     local file = fs.open(PROJECTS_FILE, "r")
     if not file then
-        print("DEBUG: Failed to open projects file")
         return
     end
     
@@ -47,11 +45,6 @@ local function loadFromFile()
         if success and loaded then
             projects = loaded.projects or {}
             nextProjectNumber = loaded.nextProjectNumber or 1
-            local count = 0
-            for _ in pairs(projects) do count = count + 1 end
-            print("DEBUG: Loaded " .. count .. " projects from file")
-        else
-            print("DEBUG: Failed to deserialize projects file")
         end
     end
 end
@@ -68,12 +61,8 @@ local function saveToFile()
     if file then
         file.write(serialized)
         file.close()
-        local count = 0
-        for _ in pairs(projects) do count = count + 1 end
-        print("DEBUG: Saved " .. count .. " projects to file")
         return true
     else
-        print("DEBUG: Failed to save projects file")
         return false
     end
 end
@@ -118,11 +107,6 @@ function projectManager.create(projectType, name, config, startPos)
     
     -- Save to file
     saveToFile()
-    
-    -- Debug: Verify storage
-    local count = 0
-    for _ in pairs(projects) do count = count + 1 end
-    print("DEBUG: Project stored. Total projects in table: " .. count)
     
     return projectId, project
 end
@@ -218,9 +202,6 @@ function projectManager.get(projectId)
 end
 
 function projectManager.getAll()
-    local count = 0
-    for _ in pairs(projects) do count = count + 1 end
-    print("DEBUG: projectManager.getAll() called - returning " .. count .. " projects")
     return projects
 end
 
