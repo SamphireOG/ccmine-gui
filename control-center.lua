@@ -13,7 +13,7 @@ local zoneAllocator = require("zone-allocator")
 local control = {}
 
 -- Version number (incremented with each release)
-control.VERSION = "2.0"
+control.VERSION = "2.0.2"
 
 -- ========== STATE ==========
 
@@ -1088,9 +1088,15 @@ function control.showLinkTurtlePicker()
     -- Title
     gui.centerText("Link Turtle", 1, gui.getColor("primary"), colors.white)
     
+    -- Trigger discovery to find turtles
+    coordinator.discoverTurtles()
+    
     -- Get idle turtles
     local idleTurtles = coordinator.getIdleTurtles()
+    local allTurtles = coordinator.getAllTurtles()
     local count = 0
+    local totalCount = 0
+    for _ in pairs(allTurtles) do totalCount = totalCount + 1 end
     
     -- Store for click detection
     control.state.linkTurtleItems = {}
@@ -1109,7 +1115,7 @@ function control.showLinkTurtlePicker()
         }
         
         for id, turtle in pairs(idleTurtles) do
-            if listY < h - 4 then
+            if listY < h - 7 then
                 term.setCursorPos(2, listY)
                 term.setTextColor(colors.green)
                 term.write("[I]")
@@ -1129,12 +1135,17 @@ function control.showLinkTurtlePicker()
             term.setTextColor(colors.gray)
             term.write("No idle turtles")
             term.setCursorPos(2, 7)
-            term.write("available to link")
+            term.write("Total registered: " .. totalCount)
             term.setTextColor(colors.white)
         end
         
-        -- Back button
-        local backBtn = components.createButton("back", 2, h - 2, w - 3, 2, "Cancel",
+        -- Refresh and Back buttons
+        local btnW = math.floor((w - 5) / 2)
+        local refreshBtn = components.createButton("refresh", 2, h - 5, btnW, 2, "Refresh",
+            function() control.showLinkTurtlePicker() end)
+        refreshBtn.bgColor = gui.getColor("primary")
+        
+        local backBtn = components.createButton("back", btnW + 3, h - 5, btnW, 2, "Cancel",
             function() control.showProjectControl() end)
         
         gui.draw()
@@ -1142,7 +1153,7 @@ function control.showLinkTurtlePicker()
     end
     
     -- Regular computer layout
-    local listPanel = components.createPanel("list", 2, 3, 47, 13, "Available Turtles (Idle)")
+    local listPanel = components.createPanel("list", 2, 3, 47, 11, "Available Turtles (Idle)")
     listPanel.borderColor = gui.getColor("border")
     
     term.setCursorPos(4, 4)
@@ -1157,7 +1168,7 @@ function control.showLinkTurtlePicker()
     }
     
     for id, turtle in pairs(idleTurtles) do
-        if listY < 14 then
+        if listY < 12 then
             term.setCursorPos(4, listY)
             term.setTextColor(colors.green)
             term.write("[IDLE]")
@@ -1174,16 +1185,23 @@ function control.showLinkTurtlePicker()
     control.state.linkTurtleBounds.h = count
     
     if count == 0 then
-        term.setCursorPos(4, 8)
+        term.setCursorPos(4, 7)
         term.setTextColor(colors.gray)
-        term.write("No idle turtles available to link")
-        term.setCursorPos(4, 9)
-        term.write("Turtles must be online and not assigned")
+        term.write("No idle turtles available")
+        term.setCursorPos(4, 8)
+        term.write("Total registered: " .. totalCount)
+        term.setCursorPos(4, 10)
+        term.setTextColor(colors.lightGray)
+        term.write("Press Refresh to scan again")
         term.setTextColor(colors.white)
     end
     
-    -- Back button
-    local backBtn = components.createButton("back", 19, 17, 13, 2, "Cancel",
+    -- Buttons
+    local refreshBtn = components.createButton("refresh", 4, 15, 13, 2, "Refresh",
+        function() control.showLinkTurtlePicker() end)
+    refreshBtn.bgColor = gui.getColor("primary")
+    
+    local backBtn = components.createButton("back", 32, 15, 13, 2, "Cancel",
         function() control.showProjectControl() end)
     
     gui.draw()

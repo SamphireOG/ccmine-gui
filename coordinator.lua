@@ -362,9 +362,10 @@ function coordinator.getOnlineTurtles()
     local currentTime = os.epoch("utc")
     
     for id, turtle in pairs(state.registry) do
-        -- Consider online if heartbeat within 2 minutes
+        -- Consider online if heartbeat within 5 minutes (300 seconds)
+        -- This is more lenient since turtles in waiting mode send heartbeats every 10s
         local timeSince = (currentTime - turtle.lastHeartbeat) / 1000
-        if timeSince < 120 then
+        if timeSince < 300 then
             turtle.online = true
             online[id] = turtle
         else
@@ -373,6 +374,11 @@ function coordinator.getOnlineTurtles()
     end
     
     return online
+end
+
+-- Get ALL registered turtles (for debugging/display)
+function coordinator.getRegisteredTurtles()
+    return state.registry
 end
 
 function coordinator.getIdleTurtles()

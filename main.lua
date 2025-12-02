@@ -972,14 +972,22 @@ function app.startupSequence()
         frameIndex = 1
         local c = getClient()
         local assigned = false
+        local lastHeartbeat = os.clock()
+        local protocol = require("protocol")
         
         while not assigned do
             -- Check for messages and assignment
             parallel.waitForAny(
                 function()
-                    -- Check for assignment periodically
+                    -- Check for assignment and send heartbeats periodically
                     while not assigned do
                         if c then
+                            -- Send heartbeat every 10 seconds to stay "online"
+                            if os.clock() - lastHeartbeat > 10 then
+                                c.sendHeartbeat()
+                                lastHeartbeat = os.clock()
+                            end
+                            
                             local status = c.getStatus()
                             if status and status.currentProject then
                                 assigned = true
@@ -1003,22 +1011,20 @@ function app.startupSequence()
                     end
                 end,
                 function()
-                    -- Message loop - process incoming messages
+                    -- Message loop - process incoming rednet messages
                     while not assigned do
-                        if c then
-                            -- This allows the client to receive PROJECT_ASSIGN messages
-                            local msg, sender = rednet.receive(nil, 0.5)
-                            if msg then
-                                -- Let the client handle it
-                                pcall(function()
-                                    local protocol = require("protocol")
-                                    if type(msg) == "table" and msg.type then
-                                        c.handleMessage(msg, sender)
-                                    end
-                                end)
-                            end
-                        else
-                            sleep(0.5)
+                        -- Listen for any rednet message
+                        local sender, msg = rednet.receive(nil, 1)
+                        if msg and type(msg) == "table" and msg.type then
+                            -- Handle the message through the client
+                            pcall(function()
+                                c.handleMessage(msg, sender)
+                                -- Check if we got assigned
+                                local status = c.getStatus()
+                                if status and status.currentProject then
+                                    assigned = true
+                                end
+                            end)
                         end
                     end
                 end
