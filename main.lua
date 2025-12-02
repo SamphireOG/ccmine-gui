@@ -232,7 +232,7 @@ function app.showMoveScreen()
     local rightBtn = components.createButton("right", rightX, 8, 9, 2, "RIGHT >", function()
         turtle.turnRight()
         app.showMoveScreen()
-    end)
+        end)
     
     -- Back button (centered)
     local backBtnW = 14
@@ -525,7 +525,7 @@ function app.enableNetwork()
         if success then
             app.state.networkEnabled = true
             app.refreshNetworkStatus()
-        end
+end
         return success
     end)
     
@@ -937,7 +937,125 @@ function app.startupSequence()
         term.write("Connected!")
         term.setCursorPos(contentX + 4, contentY + 4)
         term.write("[OK]")
-        sleep(1.5)
+        sleep(1)
+        
+        -- ===== STEP 3: WAIT FOR PROJECT ASSIGNMENT =====
+        -- Clear content area and redraw borders
+        term.setBackgroundColor(colors.black)
+        term.setTextColor(colors.white)
+        
+        -- Redraw panel interior
+        for i = 1, panelH - 2 do
+            term.setCursorPos(panelX, panelY + i)
+            term.write("|" .. string.rep(" ", panelW - 2) .. "|")
+        end
+        
+        -- Redraw bottom border
+        term.setCursorPos(panelX, panelY + panelH - 1)
+        term.write(string.rep("-", panelW))
+        
+        -- Redraw ID
+        term.setTextColor(colors.lightGray)
+        term.setCursorPos(contentX, contentY)
+        term.write(string.format("ID: %d", os.getComputerID()))
+        
+        -- Show waiting for assignment message
+        term.setTextColor(colors.cyan)
+        term.setCursorPos(contentX, contentY + 2)
+        term.write("Waiting for Assignment")
+        
+        term.setTextColor(colors.gray)
+        term.setCursorPos(contentX, contentY + 3)
+        term.write("Link me from Control Center")
+        
+        -- Wait for project assignment with animation
+        frameIndex = 1
+        local c = getClient()
+        local assigned = false
+        
+        while not assigned do
+            -- Check for messages and assignment
+            parallel.waitForAny(
+                function()
+                    -- Check for assignment periodically
+                    while not assigned do
+                        if c then
+                            local status = c.getStatus()
+                            if status and status.currentProject then
+                                assigned = true
+                                return
+                            end
+                        end
+                        sleep(0.5)
+                    end
+                end,
+                function()
+                    -- Animation loop
+                    while not assigned do
+                        sleep(0.15)
+                        frameIndex = frameIndex % #rotatingCircle + 1
+                        term.setBackgroundColor(colors.black)
+                        term.setTextColor(colors.blue)
+                        term.setCursorPos(contentX, contentY + 5)
+                        term.write(string.rep(" ", 10))
+                        term.setCursorPos(contentX, contentY + 5)
+                        term.write(rotatingCircle[frameIndex])
+                    end
+                end,
+                function()
+                    -- Message loop - process incoming messages
+                    while not assigned do
+                        if c then
+                            -- This allows the client to receive PROJECT_ASSIGN messages
+                            local msg, sender = rednet.receive(nil, 0.5)
+                            if msg then
+                                -- Let the client handle it
+                                pcall(function()
+                                    local protocol = require("protocol")
+                                    if type(msg) == "table" and msg.type then
+                                        c.handleMessage(msg, sender)
+                                    end
+                                end)
+                            end
+                        else
+                            sleep(0.5)
+                        end
+                    end
+                end
+            )
+        end
+        
+        -- Assignment received!
+        term.setBackgroundColor(colors.black)
+        for i = 2, 5 do
+            term.setCursorPos(contentX, contentY + i)
+            term.clearLine()
+        end
+        
+        -- Show assignment info
+        local status = c.getStatus()
+        term.setTextColor(colors.lime)
+        term.setCursorPos(contentX, contentY + 2)
+        term.write("Project Assigned!")
+        
+        if status and status.currentProject then
+            term.setTextColor(colors.yellow)
+            term.setCursorPos(contentX, contentY + 3)
+            local projName = status.currentProject.name or "Unknown"
+            term.write(projName:sub(1, panelW - 6))
+        end
+        
+        if status and status.assignment then
+            term.setTextColor(colors.cyan)
+            term.setCursorPos(contentX, contentY + 4)
+            term.write("Zone: " .. (status.assignment.zone or "?"))
+        end
+        
+        term.setCursorPos(contentX + 4, contentY + 5)
+        term.setTextColor(colors.lime)
+        term.write("[OK]")
+        
+        sleep(2)
     else
         -- Clear content area
         term.setBackgroundColor(colors.black)
